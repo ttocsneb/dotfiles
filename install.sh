@@ -10,7 +10,7 @@ if [ -d $DOTFILES/.git ]; then
     echo ====================
     cd $DOTFILES
     git pull
-    git submodule update
+    git submodule update --remote --merge
     echo --------------------
     echo Successfully update dotfiles
     exit 0
@@ -33,24 +33,18 @@ fi
 BACKUP_DOTFILES=${BACKUP_DOTFILES:-$HOME/.original-dotfiles}
 echo Backing up old dotfiles into $BACKUP_DOTFILES
 echo ====================
-mkdir $BACKUP_DOTFILES
+mkdir -p $BACKUP_DOTFILES
 find ~ -maxdepth 1 \
   -name .zshrc \
   -or -name .vimrc \
   -or -name .tmux.conf \
-  -print0 | xargs -0r mv -tv $BACKUP_DOTFILES
-vim_conf=${XDG_CONFIG_HOME:-$HOME/.config}/nvim/init.vim
-if [ -f $vim_conf ]; then
-  mv -tv $BACKUP_DOTFILES $conf
+  -print0 | xargs -0r mv -v -t $BACKUP_DOTFILES
+vim_conf="${XDG_CONFIG_HOME:-$HOME/.config}/nvim/init.vim"
+if [ -f "$vim_conf" ]; then
+  mv -v -t $BACKUP_DOTFILES $vim_conf
 fi
 echo --------------------
 
-echo Linking new dotfiles
-echo ====================
-ln -s $DOTFILES/zsh/zshrc.link $HOME/.zshrc
-ln -s $DOTFILES/tmux/tmux.conf.lnk $HOME/.tmux.conf
-ln -s $DOTFILES/vim/init.vim.lnk $vim_conf
-echo --------------------
 
 packages=("zsh" "tmux" "neovim")
 to_install=()
@@ -78,18 +72,28 @@ echo ====================
 git clone --depth=1 https://github.com/ttocsneb/dotfiles.git $DOTFILES
 cd $DOTFILES
 git submodule init
-git submodule update
+git submodule update --remote
 echo --------------------
 
-echo Installing Oh-My-Zsh
+# echo Installing Oh-My-Zsh
+# echo ====================
+# ZSH=$DOTFILES/zsh/oh-my-zsh/
+# RUNZSH=no
+# sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+# rm $HOME/.zshrc
+# echo --------------------
+
+echo Linking new dotfiles
 echo ====================
-ZSH=$DOTFILES/zsh/oh-my-zsh/
-CHSH=no
-sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+ln -s $DOTFILES/zsh/zshrc.link $HOME/.zshrc
+ln -s $DOTFILES/tmux/tmux.conf.lnk $HOME/.tmux.conf
+ln -s $DOTFILES/vim/init.vim.lnk $vim_conf
 echo --------------------
 
 echo Installing vim plugins
 echo ====================
 nvim +PluginInstall +qall
+echo Done!
 echo --------------------
 
+echo "Restart your shell, or run 'source ~/.zshrc'"
