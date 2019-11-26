@@ -1,0 +1,25 @@
+#!/bin/bash
+# req:wmcrl
+
+spotifyid=$(ps -ef | grep '[/]usr/share/spotify' | awk '{print $2}' | head -1)
+
+playing_char="ﱘ "
+
+#echo $spotifyid;
+
+#If no PID is found, exit with the warning.
+if [ -z "$spotifyid" ]; then
+	# echo 'Spotify not running! PID not found.';
+	exit 1;
+fi;
+
+#Get the current song by listing all windows and grepping the matching window with the PID
+currentsong=$(wmctrl -l -p | grep $spotifyid | sed -n 's/.*'$HOSTNAME'//p');
+
+#echo "'$currentsong'"
+
+not_playing=" Spotify Premium"
+
+if [ "$currentsong" != "$not_playing" ]; then
+        echo $playing_char $currentsong
+fi

@@ -1,0 +1,6 @@
+" vim:filetype=vim
+set runtimepath^=$HOME/.vim runtimepath+=$DOTFILES/vim
+let &packpath = &runtimepath
+source $DOTFILES/vim/vimrc
+
+
