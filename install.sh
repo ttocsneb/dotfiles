@@ -17,7 +17,7 @@ function is_no {
 if [ -d $DOTFILES/.git ]; then
   echo It seems that dotfiles is already installed.
   read -p "Do you want to update? (y/N): " cont
-  if [[ is_yes "$cont" ]]; then
+  if is_yes "$cont"; then
     echo Updating dotfiles
     echo ====================
     cd $DOTFILES
@@ -34,7 +34,7 @@ elif [ -d $DOTFILES ]; then
   echo "'$DOTFILES' already exists!"
   echo "If you wan to change the install directory for dotfiles, you can set the 'DOTFILES' variable before running this command"
   read -p "Would you like me to delete '$DOTFILES' for you? (y/N): " delet
-  if [[ is_yes "$delet" ]]; then
+  if is_yes "$delet"; then
     rm -r $DOTFILES
   else
     echo "Stopping install"
@@ -68,7 +68,7 @@ use_vim="no"
 vim="nvim"
 if [[ " ${to_install[@]} " =~ " nvim " ]]; then
   read "neovim isn't installed.  Should I use vim? (Y/n)" use_vim
-  if [[ ! is_no "$use_vim" ]]; then
+  if ! is_no "$use_vim"; then
     to_install=( "${to_install[@]/(nvim)}" )
     vim="vim"
   fi
@@ -76,7 +76,7 @@ fi
 
 if [ ${#to_install[@]} -gt 0 ]; then
   # read -p "Should I install the packages for you? (y/N)" install
-  # if [[ is_yes "$install" ]]; then
+  # if  is_yes "$install"; then
     # echo "Can't yet install the packages :/"
     # TODO: Install packages
   # fi
@@ -108,13 +108,13 @@ echo ====================
 ln -sv $DOTFILES/zsh/zshrc.lnk $HOME/.zshrc
 ln -sv $DOTFILES/tmux/tmux.conf.lnk $HOME/.tmux.conf
 ln -sv $DOTFILES/vim/vimrc $HOME/.vimrc 
-if [[ ! is_no "$use_vim" ]]; then
+if ! is_no "$use_vim"; then
   mkdir -pv $nvim_conf
   ln -sv $DOTFILES/vim/init.vim.lnk $nvim_conf/init.vim
 fi
 echo --------------------
 
-if [[ ! is_no "$use_vim" ]]; then
+if ! is_no "$use_vim"; then
   echo disabling neovim
   sed -i -e '/vim*=/ s/^#*\s*/# /' $DOTFILES/zsh/aliases.sh
 fi
@@ -131,7 +131,7 @@ fi
 $DOTFILES/tmux/setup.sh
 
 read -p "Would you like to use PowerLevel9k? [Y/n] " pl9k
-if [[ ! is_no "$pl9k" ]]; then
+if ! is_no "$pl9k"; then
   echo Changing theme from PowerLevel9k to ttocsneb
   sed -i -e '/ttocsneb.zsh/ s/^#*\s*//' $DOTFILES/zsh/zshrc.lnk
   sed -i -e '/pl9k.zsh/ s/^#*\s*/# /' $DOTFILES/zsh/zshrc.lnk

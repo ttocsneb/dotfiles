@@ -16,7 +16,7 @@ echo Setting up tmux
 echo ====================
 
 read -p "Should tmux use 256 colors? (Y/n)" colors
-if [[ is_no "$colors" ]]; then
+if is_no "$colors"; then
   sed -i -e '/nerdtheme.sh/ s/^#*\s*/# /' $DOTFILES/tmux/tmux.conf.lnk
   sed -i -e '/nerdtheme.sh/ s/^#*\s*//' $DOTFILES/tmux/tmux.conf.lnk
   sed -i -e '/default-terminal/ s/^#*\s*/# /' $DOTFILES/tmux/tmux.conf.lnk
@@ -28,12 +28,12 @@ function sed_themes {
 }
 
 read -p "Should tmux display the battery? (y/N)" battery
-if [[ ! is_yes "$battery" ]]; then
+if ! is_yes "$battery"; then
   sed_themes 's/\$tm_battery //'
 fi
 
 read -p "Should tmux display the current song? (y/N)" song
-if [[ ! is_yes "$song" ]]; then
+if ! is_yes "$song"; then
   sed_themes 's/\$tm_music //'
 fi
 
