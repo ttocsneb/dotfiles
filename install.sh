@@ -108,7 +108,7 @@ echo ====================
 ln -sv $DOTFILES/zsh/zshrc.lnk $HOME/.zshrc
 ln -sv $DOTFILES/tmux/tmux.conf.lnk $HOME/.tmux.conf
 ln -sv $DOTFILES/vim/vimrc $HOME/.vimrc 
-if ! is_no "$use_vim"; then
+if is_no "$use_vim"; then
   mkdir -pv $nvim_conf
   ln -sv $DOTFILES/vim/init.vim.lnk $nvim_conf/init.vim
 fi
@@ -131,7 +131,7 @@ fi
 $DOTFILES/tmux/setup.sh
 
 read -p "Would you like to use PowerLevel9k? [Y/n] " pl9k
-if ! is_no "$pl9k"; then
+if is_no "$pl9k"; then
   echo Changing theme from PowerLevel9k to ttocsneb
   sed -i -e '/ttocsneb.zsh/ s/^#*\s*//' $DOTFILES/zsh/zshrc.lnk
   sed -i -e '/pl9k.zsh/ s/^#*\s*/# /' $DOTFILES/zsh/zshrc.lnk

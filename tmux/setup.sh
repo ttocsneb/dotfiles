@@ -19,7 +19,6 @@ read -p "Should tmux use 256 colors? (Y/n)" colors
 if is_no "$colors"; then
   sed -i -e '/nerdtheme.sh/ s/^#*\s*/# /' $DOTFILES/tmux/tmux.conf.lnk
   sed -i -e '/nerdtheme.sh/ s/^#*\s*//' $DOTFILES/tmux/tmux.conf.lnk
-  sed -i -e '/default-terminal/ s/^#*\s*/# /' $DOTFILES/tmux/tmux.conf.lnk
 fi
 
 function sed_themes {
