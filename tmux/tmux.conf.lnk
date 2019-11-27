@@ -1,5 +1,4 @@
 # vi:syntax=tmux.conf
-# req:tmux
 #set -g default-command "login-shell"
 
 # tmux display things in 256 colors
@@ -98,5 +97,6 @@ bind C-v run "tmux set-buffer $(reattach-to-user-namespace pbpaste); tmux paste-
 ### Color & Style Settings ###
 ##############################
 
-source $DOTFILES/tmux/theme.sh
+source $DOTFILES/tmux/nerdtheme.sh
+# source $DOTFILES/tmux/ttocsnebtheme.sh
 

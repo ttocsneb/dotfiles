@@ -21,7 +21,9 @@ else
 fi
 
 # Choose symbol based on percentage
-if [ $perc -le 14 ]; then
+if [[ $1 == "simple" ]]; then
+        sym='B'
+elif [ $perc -le 14 ]; then
         sym=${symbol[0]}
 elif [ $perc -le 29 ]; then
         sym=${symbol[1]}

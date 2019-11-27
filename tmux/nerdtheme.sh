@@ -1,3 +1,4 @@
+# vim:filetype=tmux
 #### COLOUR
 #tm_color_active=colour32
 #tm_color_inactive=colour241

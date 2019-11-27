@@ -4,7 +4,12 @@
 spotifyid=$(ps -ef | grep '[/]usr/share/spotify' | awk '{print $2}' | head -1)
 
 playing_char="ﱘ "
+playing_char_simple="♫ "
 
+char=$playing_char
+if [[ "$1" == "simple" ]]; then
+        char=$playing_char_simple
+fi
 #echo $spotifyid;
 
 #If no PID is found, exit with the warning.
