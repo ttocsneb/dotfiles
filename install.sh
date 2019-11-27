@@ -69,8 +69,13 @@ vim="nvim"
 if [[ " ${to_install[@]} " =~ " nvim " ]]; then
   read -p "neovim isn't installed.  Should I use vim? (Y/n)" use_vim
   if ! is_no "$use_vim"; then
-    nvim=(nvim)
-    to_install=( "${to_install[@]/$nvim}" )
+    tmp=(${to_install[@]})
+    to_install=()
+    for el in ${to_install[@]}; do
+      if [[ "$el" != "nvim" ]]; then
+        to_install+=("$el")
+      fi
+    done
     vim="vim"
   fi
 fi
