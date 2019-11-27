@@ -1,5 +1,4 @@
-# req: zsh
-export DOTFILES="$HOME/.dotfiles"
+export DOTFILES=$HOME/.dotfiles
 
 export TERM="xterm-256color"
 
@@ -13,7 +12,7 @@ ZSH_CUSTOM="$DOTFILES/zsh/custom"
 # The theme configuration file
 source "$DOTFILES/zsh/themes/pl9k.zsh"
 # PowerLevel9K is prefered, but if it is possible that nerdfonts won't be installed, uncomment ttocsneb theme
-# source "$DOTFILES/zsh/themes/tocsneb.zsh"
+# source "$DOTFILES/zsh/themes/ttocsneb.zsh"
 
 # Uncomment the following line to use case-sensitive completion.
 # CASE_SENSITIVE="true"

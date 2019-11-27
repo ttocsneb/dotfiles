@@ -61,6 +61,7 @@ nnoremap <C-l> <C-w>l
 
 " UI Config
 set number
+nnoremap <C-c> :set invnumber<CR>
 set showcmd
 set cursorline
 filetype indent on
@@ -99,7 +100,6 @@ nnoremap gV `[v`]
 " edit vimrc/zshrc and load vimrc bindings
 nnoremap <leader>ev :vsp ~/.vimrc<CR>
 nnoremap <leader>ez :vsp ~/.zshrc<CR>
-nnoremap <leader>sv :source ~/.vimrc<CR>
 " open ag.vim
 " nnoremap <leader>a :Ag
 
