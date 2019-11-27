@@ -85,6 +85,8 @@ echo Linking new dotfiles
 echo ====================
 ln -sv $DOTFILES/zsh/zshrc.lnk $HOME/.zshrc
 ln -sv $DOTFILES/tmux/tmux.conf.lnk $HOME/.tmux.conf
+ln -sv $DOTFILES/vim/vimrc $HOME/.vimrc 
+mkdir -pv $nvim_conf
 ln -sv $DOTFILES/vim/init.vim.lnk $nvim_conf/init.vim
 echo --------------------
 
