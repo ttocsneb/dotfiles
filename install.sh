@@ -55,7 +55,7 @@ if [ -d $DOTFILES/.git ]; then
       echo ====================
       if ! [[ $(git status -u -s) == "" ]]; then
         pop=YES
-        git stash
+        git  -c user.name=temp -c user.email=temp@temp.com stash
       fi
       git pull
       git submodule update --remote --merge
