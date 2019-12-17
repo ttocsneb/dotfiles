@@ -14,22 +14,59 @@ function is_no {
   return $?
 }
 
-if [ -d $DOTFILES/.git ]; then
-  echo It seems that dotfiles is already installed.
-  read -p "Do you want to update? (y/N): " cont
-  if is_yes "$cont"; then
-    echo Updating dotfiles
-    echo ====================
-    cd $DOTFILES
-    git pull
-    git submodule update --remote --merge
-    echo --------------------
-    echo Successfully update dotfiles
-    exit 0
-  else
-    echo Not making any changes
-    exit 0
+function backup {
+  BACKUP_DOTFILES=${BACKUP_DOTFILES:-$HOME/.original-dotfiles}
+  echo Backing up old dotfiles into $BACKUP_DOTFILES
+  echo ====================
+  nvim_conf=${XDG_CONFIG_HOME:-$HOME/.config}/nvim
+  mkdir -p $BACKUP_DOTFILES
+  find ~ $nvim_conf -maxdepth 1 \
+    -name .zshrc \
+    -or -name .vimrc \
+    -or -name .tmux.conf \
+    -or -name init.vim \
+    | xargs -r mv -v -t $BACKUP_DOTFILES
+  echo --------------------
+}
+
+function link {
+  echo Linking new dotfiles
+  echo ====================
+  ln -sv $DOTFILES/zsh/zshrc.lnk $HOME/.zshrc
+  ln -sv $DOTFILES/tmux/tmux.conf.lnk $HOME/.tmux.conf
+  ln -sv $DOTFILES/vim/vimrc $HOME/.vimrc 
+  if is_no "$use_vim"; then
+    mkdir -pv $nvim_conf
+    ln -sv $DOTFILES/vim/init.vim.lnk $nvim_conf/init.vim
   fi
+  echo --------------------
+}
+
+if [ -d $DOTFILES/.git ]; then
+  cd $DOTFILES
+  # Check for updates
+  branch="$(git branch | grep \* | cut -d ' ' -f2-)"
+  if ! git merge-base --is-ancestor "origin/$branch" HEAD; then
+    echo There is an update to Dotfiles!
+    read -p "Do you want to update? (y/N): " cont
+    if is_yes "$cont"; then
+      echo Updating dotfiles
+      echo ====================
+      git pull
+      git submodule update --remote --merge
+      echo --------------------
+      echo Successfully update dotfiles
+    fi
+  fi
+  if ! [[ $(readlink "$HOME/.zshrc") == "$DOTFILES/zsh/zshrc.lnk" ]]; then
+    echo "dotfiles isn't linked to your home directory."
+    read -p "Should I link it for you? (Y/n): " linked
+    if ! is_no "$linked"; then
+      backup
+      link
+    fi
+  fi
+  exit 0
 elif [ -d $DOTFILES ]; then
   echo "'$DOTFILES' already exists!"
   echo "If you wan to change the install directory for dotfiles, you can set the 'DOTFILES' variable before running this command"
@@ -42,19 +79,7 @@ elif [ -d $DOTFILES ]; then
   fi
 fi
 
-BACKUP_DOTFILES=${BACKUP_DOTFILES:-$HOME/.original-dotfiles}
-echo Backing up old dotfiles into $BACKUP_DOTFILES
-echo ====================
-nvim_conf=${XDG_CONFIG_HOME:-$HOME/.config}/nvim
-mkdir -p $BACKUP_DOTFILES
-find ~ $nvim_conf -maxdepth 1 \
-  -name .zshrc \
-  -or -name .vimrc \
-  -or -name .tmux.conf \
-  -or -name init.vim \
-  | xargs -r mv -v -t $BACKUP_DOTFILES
-echo --------------------
-
+backup
 
 packages=("zsh" "tmux" "nvim")
 to_install=()
@@ -67,7 +92,7 @@ done
 use_vim="no"
 vim="nvim"
 if [[ " ${to_install[@]} " =~ " nvim " ]]; then
-  read -p "neovim isn't installed.  Should I use vim? (Y/n)" use_vim
+  read -p "neovim isn't installed.  Should I use vim instead? (Y/n)" use_vim
   if ! is_no "$use_vim"; then
     tmp=(${to_install[@]})
     to_install=()
@@ -81,12 +106,7 @@ if [[ " ${to_install[@]} " =~ " nvim " ]]; then
 fi
 
 if [ ${#to_install[@]} -gt 0 ]; then
-  # read -p "Should I install the packages for you? (y/N)" install
-  # if  is_yes "$install"; then
-    # echo "Can't yet install the packages :/"
-    # TODO: Install packages
-  # fi
-  echo "Please install the following packages"
+  echo "Please install the following packages before installing"
   for package in ${to_install[@]}; do
     printf "\t$package\n"
   done
@@ -109,16 +129,7 @@ echo --------------------
 # rm $HOME/.zshrc
 # echo --------------------
 
-echo Linking new dotfiles
-echo ====================
-ln -sv $DOTFILES/zsh/zshrc.lnk $HOME/.zshrc
-ln -sv $DOTFILES/tmux/tmux.conf.lnk $HOME/.tmux.conf
-ln -sv $DOTFILES/vim/vimrc $HOME/.vimrc 
-if is_no "$use_vim"; then
-  mkdir -pv $nvim_conf
-  ln -sv $DOTFILES/vim/init.vim.lnk $nvim_conf/init.vim
-fi
-echo --------------------
+link
 
 if ! is_no "$use_vim"; then
   echo disabling neovim
@@ -128,10 +139,8 @@ fi
 echo Installing vim plugins
 $vim +PluginInstall +qall
 
-if [[ $DOTFILES != "$HOME/.dotfiles" ]]; then
-  echo Making sure \$DOTFILES stays correct
-  sed -i -e "s|\$HOME/.dotfiles|$DOTFILES|g" $DOTFILES/zsh/zshrc.lnk
-fi
+echo Making sure \$DOTFILES stays correct
+sed -i -e "s|\$HOME/.dotfiles|$DOTFILES|g" $DOTFILES/zsh/zshrc.lnk
 
 # Setup the tmux files
 $DOTFILES/tmux/setup.sh
@@ -142,5 +151,18 @@ if is_no "$pl9k"; then
   sed -i -e '/ttocsneb.zsh/ s/^#*\s*//' $DOTFILES/zsh/zshrc.lnk
   sed -i -e '/pl9k.zsh/ s/^#*\s*/# /' $DOTFILES/zsh/zshrc.lnk
 fi
-echo "Done!"
-echo "Restart your shell, or run 'source ~/.zshrc'"
+
+new_shell=$(which zsh)
+echo "Changing shell to '$new_shell'"
+echo ====================
+chsh -s $new_shell
+echo --------------------
+
+echo Done!
+
+read -p "Should I change your shell? (Y/n): " changeshell
+if ! is_no "$changshell"; then
+  $new_shell
+else
+  echo "Restart your shell, or run '$new_shell'"
+fi
