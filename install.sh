@@ -45,6 +45,7 @@ function link {
 if [ -d $DOTFILES/.git ]; then
   cd $DOTFILES
   # Check for updates
+  git fetch
   branch="$(git branch | grep \* | cut -d ' ' -f2-)"
   if ! git merge-base --is-ancestor "origin/$branch" HEAD; then
     echo There is an update to Dotfiles!
@@ -52,8 +53,15 @@ if [ -d $DOTFILES/.git ]; then
     if is_yes "$cont"; then
       echo Updating dotfiles
       echo ====================
+      if ! [[ $(git status -u -s) == "" ]]; then
+        pop=YES
+        git stash
+      fi
       git pull
       git submodule update --remote --merge
+      if [[ $POP == "YES" ]]; then
+        git stash pop
+      fi
       echo --------------------
       echo Successfully update dotfiles
     fi
