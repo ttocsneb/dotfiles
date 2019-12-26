@@ -3,7 +3,7 @@
 export DOTFILES=${DOTFILES:-$HOME/.dotfiles}
 
 function tolow {
-  return $(echo $1 | tr '[:upper:]' '[:lower:]')
+  echo $(echo $1 | tr '[:upper:]' '[:lower:]')
 }
 
 function is_yes {
