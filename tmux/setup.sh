@@ -1,4 +1,5 @@
 #!/bin/bash
+config=$1
 
 function is_yes {
   lower=$(echo $1 | tr '[:upper:]' '[:lower:]')
@@ -15,25 +16,26 @@ function is_no {
 echo Setting up tmux
 echo ====================
 
-read -p "Should tmux use 256 colors? (Y/n)" colors
-if is_no "$colors"; then
-  sed -i -e '/nerdtheme.sh/ s/^#*\s*/# /' $DOTFILES/tmux/tmux.conf.lnk
-  sed -i -e '/ttocsnebtheme.sh/ s/^#*\s*//' $DOTFILES/tmux/tmux.conf.lnk
+read -p "Will your terminal support 256 colors? (Y/n)" colors
+CONFIG_TM_THEME=ttocsnebtheme
+if ! is_no "$colors"; then
+  echo 'export TERM="xterm-256color"' >> $config
+  CONFIG_TM_THEME=nerdtheme
 fi
-
-function sed_themes {
-  sed -i -e "$1" $DOTFILES/tmux/nerdtheme.sh
-  sed -i -e "$1" $DOTFILES/tmux/ttocsnebtheme.sh
-}
+echo "CONFIG_DOT_THEME=$CONFIG_TM_THEME" >> $config
 
 read -p "Should tmux display the battery? (y/N)" battery
+CONFIG_BATTERY=YES
 if ! is_yes "$battery"; then
-  sed_themes 's/\$tm_battery //'
+  CONFIG_BATTERY=NO
 fi
+echo "CONFIG_DOT_BATTERY=$CONFIG_BATTERY" >> $config
 
 read -p "Should tmux display the current song? (y/N)" song
+CONFIG_MUSIC=YES
 if ! is_yes "$song"; then
-  sed_themes 's/\$tm_music //'
+  CONFIG_MUSIC=NO
 fi
+echo "CONFIG_DOT_MUSIC=$CONFIG_MUSIC" >> $config
 
 echo --------------------

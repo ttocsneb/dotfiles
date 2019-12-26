@@ -2,14 +2,18 @@
 
 export DOTFILES=${DOTFILES:-$HOME/.dotfiles}
 
+function tolow {
+  return $(echo $1 | tr '[:upper:]' '[:lower:]')
+}
+
 function is_yes {
-  lower=$(echo $1 | tr '[:upper:]' '[:lower:]')
+  lower="$(tolow $1)"
   [[ $lower == y* ]]
   return $?
 }
 
 function is_no {
-  lower=$(echo $1 | tr '[:upper:]' '[:lower:]')
+  lower="$(tolow $1)"
   [[ $lower == n* ]]
   return $?
 }
@@ -139,25 +143,11 @@ echo --------------------
 
 link
 
-if ! is_no "$use_vim"; then
-  echo disabling neovim
-  sed -i -e '/vim*=/ s/^#*\s*/# /' $DOTFILES/zsh/aliases.sh
-fi
-
 echo Installing vim plugins
 $vim +PluginInstall +qall
 
-echo Making sure \$DOTFILES stays correct
-sed -i -e "s|\$HOME/.dotfiles|$DOTFILES|g" $DOTFILES/zsh/zshrc.lnk
-
-# Setup the tmux files
-$DOTFILES/tmux/setup.sh
-
-read -p "Would you like to use PowerLevel9k? [Y/n] " pl9k
-if is_no "$pl9k"; then
-  echo Changing theme from PowerLevel9k to ttocsneb
-  sed -i -e '/ttocsneb.zsh/ s/^#*\s*//' $DOTFILES/zsh/zshrc.lnk
-  sed -i -e '/pl9k.zsh/ s/^#*\s*/# /' $DOTFILES/zsh/zshrc.lnk
+if ! [[ -e "$HOME/.dotrc" || -e "$DOTFILES/dotrc" ]]; then
+  "$DOTFILES/configure.sh"
 fi
 
 new_shell=$(which zsh)

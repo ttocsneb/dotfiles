@@ -28,14 +28,14 @@ autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isT
 nnoremap <C-n> :NERDTreeToggle<Return>
 
 " Disable arrow keys
-nnoremap <Up> :echo "Dont be stupid"<Return>
-inoremap <Up> <Esc>
-nnoremap <Down> :echo "Dont be stupid"<Return>
-inoremap <Down> <Esc>
-nnoremap <Left> :echo "Dont be stupid"<Return>
-inoremap <Left> <Esc>
-nnoremap <Right> :echo "Dont be stupid"<Return>
-inoremap <Right> <Esc>
+" nnoremap <Up> :echo "Dont be stupid"<Return>
+" inoremap <Up> <Esc>
+" nnoremap <Down> :echo "Dont be stupid"<Return>
+" inoremap <Down> <Esc>
+" nnoremap <Left> :echo "Dont be stupid"<Return>
+" inoremap <Left> <Esc>
+" nnoremap <Right> :echo "Dont be stupid"<Return>
+" inoremap <Right> <Esc>
 
 " use Ctrl-[hjkl] to navigate in insert
 inoremap <C-h> <Left>

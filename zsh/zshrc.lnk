@@ -1,6 +1,18 @@
-export DOTFILES=$HOME/.dotfiles
+export DOTFILES="$(dirname "$(dirname "$(readlink "$HOME/.zshrc")")")"
 
-export TERM="xterm-256color"
+# Load the settings
+if ! [[ -e "$HOME/.dotrc" || -e "$DOTFILES/dotrc" ]]; then
+        echo "No configuration found"
+        "$DOTFILES/configure.sh"
+fi
+if [ -e "$HOME/.dotrc" ]; then
+        source "$HOME/.dotrc"
+elif [ -e "$DOTFILES/dotrc" ]; then
+        source "$DOTFILES/dotrc"
+else
+        echo "Could not Find config files!"
+        exit 1
+fi
 
 # If you come from bash you might have to change your $PATH.
 export PATH=$HOME/bin:/usr/local/bin:$DOTFILES/bin:$PATH
@@ -10,7 +22,10 @@ export ZSH="$DOTFILES/zsh/oh-my-zsh/"
 ZSH_CUSTOM="$DOTFILES/zsh/custom"
 
 # The theme configuration file
-source "$DOTFILES/zsh/themes/pl9k.zsh"
+# These should be put in settings.sh
+#
+# source "$DOTFILES/zsh/themes/pl9k.zsh"
+#
 # PowerLevel9K is prefered, but if it is possible that nerdfonts won't be installed, uncomment ttocsneb theme
 # source "$DOTFILES/zsh/themes/ttocsneb.zsh"
 
@@ -93,5 +108,21 @@ if [ -f $HOME/.bash_aliases ]; then
     source $HOME/.bash_aliases
 fi
 
+get_date() {
+        date --utc --date="$1" +"%Y-%m-%d %H:%M:%S"
+}
+
 # Keep Dotfiles up to date
-$DOTFILES/install.sh
+LAST_DOT_UPDATE=$(cat $DOTFILES/.lastupdate 2> /dev/null)
+if [[ $CONFIG_DOT_UPDATE == "YES" && "$(get_date '-10 days')" > "$LAST_DOT_UPDATE" ]]; then
+        echo "Checking for dotfiles update.."
+        echo "$(get_date)" > $DOTFILES/.lastupdate
+        DIR=$(pwd)
+        cd $DOTFILES
+        git fetch
+        branch="$(git branch | grep \* | cut -d ' ' -f2-)"
+        if ! git merge-base --is-ancestor "origin/$branch" HEAD; then
+                bash -c "$(curl -fsSL https://raw.githubusercontent.com/ttocsneb/dotfiles/$branch/install.sh)"
+        fi
+        cd $DIR
+fi

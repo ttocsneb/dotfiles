@@ -3,9 +3,11 @@
 alias fs='du -bsh --apparent-size'
 alias rcopy='rsync -ha --info=progress2'
 
-alias disk='df -h | grep sd'
+alias disk="df -h | grep -E 'File|sd'"
 
 alias urmumbiggay="echo no u"
 
-alias vim='nvim'
-alias vi='nvim'
+if [[ $CONFIG_DOT_NEOVIM == "YES" ]]; then
+  alias vim='nvim'
+  alias vi='nvim'
+fi
