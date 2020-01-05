@@ -21,6 +21,10 @@ export PATH=$HOME/bin:/usr/local/bin:$DOTFILES/bin:$PATH
 export ZSH="$DOTFILES/zsh/oh-my-zsh/"
 ZSH_CUSTOM="$DOTFILES/zsh/custom"
 
+# https://askubuntu.com/questions/466198/how-do-i-change-the-color-for-directories-with-ls-in-the-console
+LS_COLORS="di=1;34:ex=4;32:fi=0;37:ln=1;35:ow=0;36:"
+export LS_COLORS
+
 # The theme configuration file
 # These should be put in settings.sh
 #
