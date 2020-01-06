@@ -1,7 +1,53 @@
 #!/bin/bash
 
-export DOTFILES=${DOTFILES:-$HOME/.dotfiles}
 
+! getopt --test > /dev/null 
+if [[ ${PIPESTATUS[0]} -ne 4 ]]; then
+	echo 'getopt is outdated or not installed!'
+	exit 1
+fi
+
+OPTIONS=hb:
+LONGOPT=branch:,help
+
+! PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPT --name "$0" -- "$@")
+if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+  # getopt couldn't parse options
+  exit 2
+fi
+
+eval set -- "$PARSED"
+
+# Parse options
+DOTBRANCH=${DOTBRANCH:-master}
+DOTFILES=${DOTFILES:-$HOME/.dotfiles}
+while true; do
+  case "$1" in
+    -h|--help)
+      echo "Dotfiles Installer.  This script will install ttocsneb's dotfiles for you.  You will need tmux,zsh and neovim (vim is also acceptable)"
+      printf "Arguments:\n\t-h\t\t--help\t\t\tPrint this help message\n\t-b <branch>\t--branch <branch> \tSet the git branch to pull from (default: master) Can set \$DOTBRANCH instead\nPositional Arguments:\n\t[install]\t\t\t\tDirectory to install to (default: \$HOME/.dotfiles) Can set \$DOTFILES instead\n"
+      exit 0
+      ;;
+    -b|--branch)
+      DOTBRANCH="$2"
+      shift 2
+      ;;
+    --)
+      shift
+      break
+      ;;
+    *)
+      echo "Programming Error"
+      exit 3
+      ;;
+  esac
+done
+if [[ $# -ge 1 ]]; then
+  DOTFILES="$1"
+  shift
+fi
+
+# Install Functions
 function tolow {
   echo $(echo $1 | tr '[:upper:]' '[:lower:]')
 }
@@ -17,14 +63,6 @@ function is_no {
   [[ $lower == n* ]]
   return $?
 }
-
-read -p "Installing Dotfiles to '$DOTFILES' Is that ok? [Y/n] " install_ok
-
-if is_no $install_ok; then
-  echo "Stopping installation.."
-  echo "To change the install location, either set \$DOTFILES before running the script, or pass the install location as a parameter"
-  exit 1
-fi
 
 function backup {
   BACKUP_DOTFILES=${BACKUP_DOTFILES:-$HOME/.original-dotfiles}
@@ -99,7 +137,21 @@ elif [ -d $DOTFILES ]; then
   fi
 fi
 
+# Check if Install directory is OK
+
+read -p "Installing Dotfiles on the $DOTBRANCH branch to '$DOTFILES' Is that ok? [Y/n] " install_ok
+
+if is_no $install_ok; then
+  echo "Stopping installation.."
+  echo "To change the install location, either set \$DOTFILES before running the script, or pass the install location as a parameter"
+  exit 1
+fi
+
+# Backup existing dotfiles
+
 backup
+
+# Check for necessary packages
 
 packages=("zsh" "tmux" "nvim")
 to_install=()
@@ -135,8 +187,15 @@ fi
 
 echo Cloning dotfiles
 echo ====================
-git clone --depth=1 https://github.com/ttocsneb/dotfiles.git $DOTFILES
+git clone -b $DOTBRANCH --single-branch --depth=1 https://github.com/ttocsneb/dotfiles.git $DOTFILES
 cd $DOTFILES
+
+export ZSH=$DOTFILES/zsh/oh-my-zsh
+export RUNZSH=no
+rm -r $DOTFILES/zsh/oh-my-zsh
+sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+rm $HOME/.zshrc
+
 git submodule init
 git submodule update --remote
 echo --------------------
@@ -158,17 +217,17 @@ if ! [[ -e "$HOME/.dotrc" || -e "$DOTFILES/dotrc" ]]; then
   "$DOTFILES/configure.sh"
 fi
 
-new_shell=$(which zsh)
-echo "Changing shell to '$new_shell'"
-echo ====================
-chsh -s $new_shell
-echo --------------------
+# new_shell=$(which zsh)
+# echo "Changing shell to '$new_shell'"
+# echo ====================
+# chsh -s $new_shell
+# echo --------------------
 
 echo Done!
 
-read -p "Should I change your shell? (Y/n): " changeshell
+read -p "Should I run your new shell? (Y/n): " changeshell
 if ! is_no "$changshell"; then
-  $new_shell
+  exec zsh -l
 else
   echo "Restart your shell, or run '$new_shell'"
 fi
