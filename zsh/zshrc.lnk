@@ -119,14 +119,7 @@ get_date() {
 # Keep Dotfiles up to date
 LAST_DOT_UPDATE=$(cat $DOTFILES/.lastupdate 2> /dev/null)
 if [[ $CONFIG_DOT_UPDATE == "YES" && "$(get_date '-10 days')" > "$LAST_DOT_UPDATE" ]]; then
-        echo "Checking for dotfiles update.."
+        # echo "Checking for dotfiles update.."
         echo "$(get_date)" > $DOTFILES/.lastupdate
-        DIR=$(pwd)
-        cd $DOTFILES
-        git fetch
-        branch="$(git branch | grep \* | cut -d ' ' -f2-)"
-        if ! git merge-base --is-ancestor "origin/$branch" HEAD; then
-                bash -c "$(curl -fsSL https://raw.githubusercontent.com/ttocsneb/dotfiles/$branch/install.sh)"
-        fi
-        cd $DIR
+        $DOTFILES/update.sh
 fi

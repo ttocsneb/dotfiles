@@ -18,6 +18,14 @@ function is_no {
   return $?
 }
 
+read -p "Installing Dotfiles to '$DOTFILES' Is that ok? [Y/n] " install_ok
+
+if is_no $install_ok; then
+  echo "Stopping installation.."
+  echo "To change the install location, either set \$DOTFILES before running the script, or pass the install location as a parameter"
+  exit 1
+fi
+
 function backup {
   BACKUP_DOTFILES=${BACKUP_DOTFILES:-$HOME/.original-dotfiles}
   echo Backing up old dotfiles into $BACKUP_DOTFILES
