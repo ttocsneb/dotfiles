@@ -1,0 +1,3 @@
+Add Configs:
+        CONFIG_DOT_COC -- Whether COC is enabled
+        CONFIG_DOT_NERD -- Whether using a nerd font

@@ -12,12 +12,20 @@ call vundle#begin()
 Plugin 'VundleVim/Vundle.vim'
 Plugin 'kien/ctrlp.vim' " fuzzy find files
 Plugin 'scrooloose/nerdtree' " file drawer, open with :NERDTreeToggle
+Plugin 'Xuyuanp/nerdtree-git-plugin' " Git status in nerdtree
 Plugin 'scrooloose/nerdcommenter' " Comment lines
-Plugin 'ryanoasis/vim-devicons' " allow Nerdfont Icons
-Plugin 'tiagofumo/vim-nerdtree-syntax-highlight' " Pretty Icons
 Plugin 'tpope/vim-fugitive' " the ultimate git helper
 Plugin 'sjl/badwolf' " Colorscheme
 Plugin 'airblade/vim-gitgutter' " Git changes
+
+if $CONFIG_DOT_COC == 'YES'
+        Plugin 'neoclide/coc.nvim' " Language Completion Protocol
+endif
+
+if $CONFIG_DOT_NERD == 'YES'
+        Plugin 'ryanoasis/vim-devicons' " allow Nerdfont Icons
+        Plugin 'tiagofumo/vim-nerdtree-syntax-highlight' " Pretty Icons
+endif
 
 call vundle#end()
 
@@ -29,6 +37,21 @@ syntax enable
 autocmd StdinReadPre * let s:std_in=1
 autocmd VimEnter * if argc() == 0 && !exists("s:std_in") | NERDTree | endif
 autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
+
+" Sync open file with Nerdtree
+function! IsNERDTreeOpen()
+        return exists("t:NERDTreeBufName") && (bufwinnr(t:NERDTreeBufName) != -1)
+endfunction
+
+function! SyncTree()
+        if &modifiable && IsNERDTreeOpen() && strlen(expand('%')) > 0 && !&diff
+                NERDTreeFind
+                wincmd p
+        endif
+endfunction
+
+" Highlight Currently open buffer in NERDTree
+autocmd BufEnter * call SyncTree()
 
 nnoremap <C-n> :NERDTreeToggle<Return>
 
@@ -51,15 +74,63 @@ highlight GitGutterAdd    guifg=#009900 ctermfg=2
 highlight GitGutterChange guifg=#bbbb00 ctermfg=3
 highlight GitGutterDelete guifg=#ff2222 ctermfg=1
 
+" Nerdtree Git Plugin
+let g:NERDTreeIndicatorMapCustom = {
+    \ "Modified"  : "~",
+    \ "Staged"    : "+",
+    \ "Untracked" : "*",
+    \ "Renamed"   : "→",
+    \ "Unmerged"  : "=",
+    \ "Deleted"   : "X",
+    \ "Dirty"     : "≈",
+    \ "Clean"     : "√",
+    \ 'Ignored'   : '≡',
+    \ "Unknown"   : "?"
+    \ }
+
 " coc.nvim
 if $CONFIG_DOT_COC == 'YES'
-        
+        " COC config
+        let g:coc_global_extensions = [
+                \ 'coc-snippets',
+                \ 'coc-pairs',
+                \ 'coc-python',
+                \ 'coc-ccls',
+                \ 'coc-json']
+        set hidden
+        set updatetime=300
+
+        set shortmess+=c
+
+        inoremap <silent><expr> <TAB>
+                \ pumvisible() ? "\<C-n" :
+                \ <SID>check_back_space() ? "\<TAB>" :
+                \ coc#refresh()
+        inoremap <expr><S-TAB> pumvisible() ? "\<C-p>" : "\<C-h>"
+
+        function! s:check_back_space() abort
+                let col = col('.') - 1
+                return !col || getline('.')[col - 1] =~# '\s'
+        endfunction
+
+        " Use <c-space> to trigger completion
+        inoremap <silent><expr> <c-space> coc#refresh()
+
+        " Use <cr> to confirm completion, `<C-g>u` means break undu chain at current position.
+        " Coc only does snippet and additional edit on confrim.
+        inoremap <expr> <cr> pumvisible() ? "\<C-y>" : "\<C-g>u\<CR>"
+
 endif
+
+" ctrlp
+let g:ctrlp_user_command = ['.git/', 'git --git-dir=%s/.git ls-files -oc --exclude-standard']
 
 " Enable vim auto settings on the first/last line see :help auto-setting
 set modeline
 
 " Tab Settings
+set smarttab
+set cindent
 set tabstop=6
 set softtabstop=4
 set expandtab

@@ -85,10 +85,8 @@ function link {
   ln -sv $DOTFILES/zsh/zshrc.lnk $HOME/.zshrc
   ln -sv $DOTFILES/tmux/tmux.conf.lnk $HOME/.tmux.conf
   ln -sv $DOTFILES/vim/vimrc $HOME/.vimrc 
-  if is_no "$use_vim"; then
-    mkdir -pv $nvim_conf
-    ln -sv $DOTFILES/vim/init.vim.lnk $nvim_conf/init.vim
-  fi
+  mkdir -pv $nvim_conf
+  ln -sv $DOTFILES/vim/init.vim.lnk $nvim_conf/init.vim
   echo --------------------
 }
 
