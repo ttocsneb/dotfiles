@@ -4,9 +4,6 @@ filetype off
 " set the runtime path to include Vundle and initialize
 set rtp+=$DOTFILES/vim/bundle/Vundle.vim
 
-"colorscheme badwolf
-syntax enable
-
 let mapleader=","
 
 call vundle#rc("$DOTFILES/vim/bundle")
@@ -15,10 +12,18 @@ call vundle#begin()
 Plugin 'VundleVim/Vundle.vim'
 Plugin 'kien/ctrlp.vim' " fuzzy find files
 Plugin 'scrooloose/nerdtree' " file drawer, open with :NERDTreeToggle
+Plugin 'scrooloose/nerdcommenter' " Comment lines
+Plugin 'ryanoasis/vim-devicons' " allow Nerdfont Icons
+Plugin 'tiagofumo/vim-nerdtree-syntax-highlight' " Pretty Icons
 Plugin 'tpope/vim-fugitive' " the ultimate git helper
-Plugin 'tpope/vim-commentary' " comment/uncomment lines with gcc or gc in visual mode
+Plugin 'sjl/badwolf' " Colorscheme
+Plugin 'airblade/vim-gitgutter' " Git changes
 
 call vundle#end()
+
+" Syntax Highlighting
+colorscheme badwolf
+syntax enable
 
 " Start Nerdtree if no other file is open
 autocmd StdinReadPre * let s:std_in=1
@@ -27,21 +32,29 @@ autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isT
 
 nnoremap <C-n> :NERDTreeToggle<Return>
 
-" Disable arrow keys
-" nnoremap <Up> :echo "Dont be stupid"<Return>
-" inoremap <Up> <Esc>
-" nnoremap <Down> :echo "Dont be stupid"<Return>
-" inoremap <Down> <Esc>
-" nnoremap <Left> :echo "Dont be stupid"<Return>
-" inoremap <Left> <Esc>
-" nnoremap <Right> :echo "Dont be stupid"<Return>
-" inoremap <Right> <Esc>
+" NerdCommentor
+filetype plugin on
 
-" use Ctrl-[hjkl] to navigate in insert
-inoremap <C-h> <Left>
-inoremap <C-j> <Down>
-inoremap <C-k> <Up>
-inoremap <C-l> <Right>
+let g:NERDSpaceDelims = 1
+let g:NERDCommentEmptyLines = 1
+
+" C-_ means Control + / for some reason
+vmap <C-_> <plug>NERDCommenterToggle
+nmap <C-_> <plug>NERDCommenterToggle
+
+" GitGutter
+let g:gitgutter_preview_win_floating = 1
+
+nmap hf :GitGutterFold<CR>
+
+highlight GitGutterAdd    guifg=#009900 ctermfg=2
+highlight GitGutterChange guifg=#bbbb00 ctermfg=3
+highlight GitGutterDelete guifg=#ff2222 ctermfg=1
+
+" coc.nvim
+if $CONFIG_DOT_COC == 'YES'
+        
+endif
 
 " Enable vim auto settings on the first/last line see :help auto-setting
 set modeline
