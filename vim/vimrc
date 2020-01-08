@@ -30,7 +30,14 @@ endif
 call vundle#end()
 
 " Syntax Highlighting
-colorscheme badwolf
+
+try
+        " Badwolf won't be installed when vundle is downloading plugins
+        colorscheme badwolf
+catch /^Vim\%((\a\+)\)\=:E185/
+        " deal with it
+endtry
+
 syntax enable
 
 " Start Nerdtree if no other file is open

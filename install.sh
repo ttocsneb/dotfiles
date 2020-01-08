@@ -8,8 +8,8 @@ if [[ ${PIPESTATUS[0]} -ne 4 ]]; then
 	exit 1
 fi
 
-OPTIONS=hb:
-LONGOPT=branch:,help
+OPTIONS=hb:s
+LONGOPT=branch:,help,ssh
 
 ! PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPT --name "$0" -- "$@")
 if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
@@ -22,16 +22,29 @@ eval set -- "$PARSED"
 # Parse options
 DOTBRANCH=${DOTBRANCH:-master}
 DOTFILES=${DOTFILES:-$HOME/.dotfiles}
+REMOTE="https://github.com/ttocsneb/dotfiles.git"
 while true; do
   case "$1" in
     -h|--help)
-      echo "Dotfiles Installer.  This script will install ttocsneb's dotfiles for you.  You will need tmux,zsh and neovim (vim is also acceptable)"
-      printf "Arguments:\n\t-h\t\t--help\t\t\tPrint this help message\n\t-b <branch>\t--branch <branch> \tSet the git branch to pull from (default: master) Can set \$DOTBRANCH instead\nPositional Arguments:\n\t[install]\t\t\t\tDirectory to install to (default: \$HOME/.dotfiles) Can set \$DOTFILES instead\n"
+      cat << EOF
+Dotfiles Installer.  This script will install ttocsneb's dotfiles for you.  You will need tmux,zsh and neovim (vim is also acceptable)
+Arguments:
+  -h            --help              Print this help message
+  -b <branch>   --branch <branch>   Pull from the specified git branch (master)
+                                      Can also set \$DOTBRANCH
+  -s            --ssh               Use ssh to pull instead of https
+Positional Arguments:
+  [install]                         Directory to install to (\$HOME/.dotfiles)
+EOF
       exit 0
       ;;
     -b|--branch)
       DOTBRANCH="$2"
       shift 2
+      ;;
+    -s|--ssh)
+      REMOTE="git@github.com:ttocsneb/dotfiles.git"
+      shift
       ;;
     --)
       shift
@@ -92,15 +105,28 @@ function link {
 }
 
 function migrate {
-  # if the migrate file doesn't exist, there is nothing we can do to migrate aside from reconfiguring and hope for the best
-  if [ -e "$DOTFILES/.migrate" ]; then
-    echo Could not detect version :/  Reconfiguring
-    $DOTFILES/configure.sh
+  if [ -e "$HOME/.dotrc" ]; then
+    dotconfig="$HOME/.dotrc"
+  elif [ -e "$DOTFILES/dotrc" ]; then
+    dotconfig="$DOTFILES/dotrc"
   else
-    version=$(cat "$DOTFILES/.migrate")
-    if [ $version -lt $CURVER ]; then
-      echo Migrating old configurations
-    fi
+    return 1
+  fi
+  dotrc=$(cat $dotconfig | grep CONFIG_DOT_VER=)
+  if [ $? -ne 0 ]; then
+    version=0
+    return 0
+  else
+    version=${dotrc/CONFIG_DOT_VER=/}
+  fi
+
+  if [ -z $version ]; then
+    $DOTFILES/configure.sh $CURVER
+  elif [ $version -eq 0 ]; then
+    echo Could not detect version :/  Reconfiguring
+    $DOTFILES/configure.sh $CURVER
+  elif [ $version -lt $CURVER ]; then
+    echo Migrating old configurations
     while [ $version -lt $CURVER ]; do
       case "$version" in
         1)
@@ -109,8 +135,8 @@ function migrate {
       esac
       ((version++))
     done
+    sed -i "s/CONFIG_DOT_VER=.*/CONFIG_DOT_VER=$CURVER/g" $dotconfig
   fi
-  echo $CURVER > "$DOTFILES/.migrate"
 }
 
 if [ -d $DOTFILES/.git ]; then
@@ -209,7 +235,7 @@ fi
 
 echo Cloning dotfiles
 echo ====================
-git clone -b $DOTBRANCH --single-branch --depth=1 https://github.com/ttocsneb/dotfiles.git $DOTFILES
+git clone -b $DOTBRANCH --single-branch --depth=1 $REMOTE $DOTFILES
 cd $DOTFILES
 
 export ZSH=$DOTFILES/zsh/oh-my-zsh
@@ -235,11 +261,7 @@ link
 echo Installing vim plugins
 $vim +PluginInstall +qall
 
-if ! [[ -e "$HOME/.dotrc" || -e "$DOTFILES/dotrc" ]]; then
-  "$DOTFILES/configure.sh"
-fi
-
-echo $CURVER > "$DOTFILES/.migrate"
+migrate
 
 echo Done!
 

@@ -33,7 +33,7 @@ if [ -e "$config" ]; then
   mv "$config" "$HOME/.original-dotfiles"
 fi
 
-printf "# vi:syntax=zsh\n\n# Dotfiles Config\n" > $config
+printf "# vi:syntax=zsh\nCONFIG_DOT_VER=$1\n\n# Dotfiles Config\n" > $config
 
 if [ -z ${use_vim+x} ]; then
   if ! hash nvim &> /dev/null; then
@@ -61,7 +61,7 @@ read -p "Are you using NerdFonts? [y/N] " nerd
 
 CONF_THEME='$DOTFILES/zsh/themes/ttocsneb.zsh'
 CONFIG_NERD='NO'
-if is_yes "nerd"; then
+if is_yes "$nerd"; then
   CONFIG_NERD='YES'
 
   read -p "Would you like to use PowerLevel9k? [Y/n] " pl9k
