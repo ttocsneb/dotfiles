@@ -27,7 +27,13 @@ if [[ $lower == g* ]]; then
   config="$DOTFILES/dotrc"
 fi
 
-printf "# vi:syntax=zsh\n\n# Zsh Config\n" > $config
+if [ -e "$config" ]; then
+  echo "Backing up '$config' to $HOME/.original-dotfiles"
+  mkdir -p "$HOME/.original-dotfiles"
+  mv "$config" "$HOME/.original-dotfiles"
+fi
+
+printf "# vi:syntax=zsh\n\n# Dotfiles Config\n" > $config
 
 if [ -z ${use_vim+x} ]; then
   if ! hash nvim &> /dev/null; then
@@ -44,20 +50,27 @@ if ! is_no "$use_vim"; then
 fi
 echo "CONFIG_DOT_NEOVIM=$CONFIG_DOT_NEOVIM" >> $config
 
-read -p "Do you want to check for dotfile updates? [Y/n] " update
+read -p "Do you want automatically to check for dotfile updates? [Y/n] " update
 CONFIG_UPDATE=NO
 if ! is_no "$update"; then
   CONFIG_UPDATE=YES
 fi
 printf "CONFIG_DOT_UPDATE=$CONFIG_UPDATE\n\n" >> $config
 
-read -p "Would you like to use PowerLevel9k? [y/N] " pl9k
+read -p "Are you using NerdFonts? [y/N] " nerd
+
 CONF_THEME='$DOTFILES/zsh/themes/ttocsneb.zsh'
-if is_yes "$pl9k"; then
-  echo Changing theme from PowerLevel9k to ttocsneb
-  CONF_THEME='$DOTFILES/zsh/themes/pl9k.zsh'
+CONFIG_NERD='NO'
+if is_yes "nerd"; then
+  CONFIG_NERD='YES'
+
+  read -p "Would you like to use PowerLevel9k? [Y/n] " pl9k
+  if ! is_no "$pl9k"; then
+    echo Changing theme from PowerLevel9k to ttocsneb
+    CONF_THEME='$DOTFILES/zsh/themes/pl9k.zsh'
+  fi
 fi
-printf "source \"$CONF_THEME\"\n\n# Tmux Config\n" >> $config 
+printf "source \"$CONF_THEME\"\n\nexport CONFIG_DOT_NERD=$CONFIG_NERD\n" >> $config 
 
 echo --------------------
 

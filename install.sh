@@ -1,5 +1,6 @@
 #!/bin/bash
 
+CURVER=1
 
 ! getopt --test > /dev/null 
 if [[ ${PIPESTATUS[0]} -ne 4 ]]; then
@@ -90,6 +91,28 @@ function link {
   echo --------------------
 }
 
+function migrate {
+  # if the migrate file doesn't exist, there is nothing we can do to migrate aside from reconfiguring and hope for the best
+  if [ -e "$DOTFILES/.migrate" ]; then
+    echo Could not detect version :/  Reconfiguring
+    $DOTFILES/configure.sh
+  else
+    version=$(cat "$DOTFILES/.migrate")
+    if [ $version -lt $CURVER ]; then
+      echo Migrating old configurations
+    fi
+    while [ $version -lt $CURVER ]; do
+      case "$version" in
+        1)
+          echo Migration!
+          ;;
+      esac
+      ((version++))
+    done
+  fi
+  echo $CURVER > "$DOTFILES/.migrate"
+}
+
 if [ -d $DOTFILES/.git ]; then
   cd $DOTFILES
   # Check for updates
@@ -110,6 +133,7 @@ if [ -d $DOTFILES/.git ]; then
       if [[ $POP == "YES" ]]; then
         git stash pop
       fi
+      migrate
       echo --------------------
       echo Successfully update dotfiles
     fi
@@ -215,11 +239,7 @@ if ! [[ -e "$HOME/.dotrc" || -e "$DOTFILES/dotrc" ]]; then
   "$DOTFILES/configure.sh"
 fi
 
-# new_shell=$(which zsh)
-# echo "Changing shell to '$new_shell'"
-# echo ====================
-# chsh -s $new_shell
-# echo --------------------
+echo $CURVER > "$DOTFILES/.migrate"
 
 echo Done!
 

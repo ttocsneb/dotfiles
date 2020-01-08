@@ -66,9 +66,21 @@ vmap <C-_> <plug>NERDCommenterToggle
 nmap <C-_> <plug>NERDCommenterToggle
 
 " GitGutter
+let g:gitgutter_map_keys = 0
 let g:gitgutter_preview_win_floating = 1
+let g:gitgutter_highlight_linenrs = 1
 
-nmap hf :GitGutterFold<CR>
+let g:gitgutter_sign_modified_removed   = '±'
+
+nmap <leader>hp <plug>(GitGutterPreviewHunk)
+nmap <leader>hs <plug>(GitGutterStageHunk)
+nmap <leader>hu <plug>(GitGutterUndoHunk)
+
+nmap [c <plug>(GitGutterPrevHunk)
+nmap ]c <plug>(GitGutterNextHunk)
+
+
+nmap <leader>hf :GitGutterFold<CR>
 
 highlight GitGutterAdd    guifg=#009900 ctermfg=2
 highlight GitGutterChange guifg=#bbbb00 ctermfg=3
