@@ -1,5 +1,7 @@
 #!/bin/bash
 
+version=1
+
 #!/bin/bash
 function tolow {
   echo $(echo $1 | tr '[:upper:]' '[:lower:]')
@@ -33,7 +35,7 @@ if [ -e "$config" ]; then
   mv "$config" "$HOME/.original-dotfiles"
 fi
 
-printf "# vi:syntax=zsh\nCONFIG_DOT_VER=$1\n\n# Dotfiles Config\n" > $config
+printf "# vi:syntax=zsh\nCONFIG_DOT_VER=$version\n\n# Dotfiles Config\n" > $config
 
 if [ -z ${use_vim+x} ]; then
   if ! hash nvim &> /dev/null; then

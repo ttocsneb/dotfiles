@@ -1,7 +1,5 @@
 #!/bin/bash
 
-CURVER=1
-
 ! getopt --test > /dev/null 
 if [[ ${PIPESTATUS[0]} -ne 4 ]]; then
 	echo 'getopt is outdated or not installed!'
@@ -105,12 +103,15 @@ function link {
 }
 
 function migrate {
+  CURVER=1
+
   if [ -e "$HOME/.dotrc" ]; then
     dotconfig="$HOME/.dotrc"
   elif [ -e "$DOTFILES/dotrc" ]; then
     dotconfig="$DOTFILES/dotrc"
   else
-    return 1
+    $DOTFILES/configure.sh
+    return 0
   fi
   dotrc=$(cat $dotconfig | grep CONFIG_DOT_VER=)
   if [ $? -ne 0 ]; then
@@ -121,10 +122,10 @@ function migrate {
   fi
 
   if [ -z $version ]; then
-    $DOTFILES/configure.sh $CURVER
+    $DOTFILES/configure.sh
   elif [ $version -eq 0 ]; then
     echo Could not detect version :/  Reconfiguring
-    $DOTFILES/configure.sh $CURVER
+    $DOTFILES/configure.sh
   elif [ $version -lt $CURVER ]; then
     echo Migrating old configurations
     while [ $version -lt $CURVER ]; do
