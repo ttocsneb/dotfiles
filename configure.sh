@@ -72,7 +72,17 @@ if is_yes "$nerd"; then
     CONF_THEME='$DOTFILES/zsh/themes/pl9k.zsh'
   fi
 fi
-printf "source \"$CONF_THEME\"\n\nexport CONFIG_DOT_NERD=$CONFIG_NERD\n" >> $config 
+printf "source \"$CONF_THEME\"\n\nexport CONFIG_DOT_NERD=$CONFIG_NERD\n" >> $config
+
+read -p "Do you want to use COC? [y/N] " useCoc
+COC=NO
+if ! is_no "$useCoc"; then
+  COC=YES
+  if ! hash node &> /dev/null; then
+    echo Make sure you install node
+  fi
+fi
+echo "export CONFIG_DOT_COC=$COC" >> $config
 
 echo --------------------
 

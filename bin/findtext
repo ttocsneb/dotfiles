@@ -1,0 +1,66 @@
+#!/bin/bash
+
+OPTIONS=t:f:h
+LONGOPT=type:,file:,help
+PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPT --name "$0" -- "$@")
+exit_stat=$?
+if [[ $exit_stat -ne 0 ]]; then
+  return 2
+fi
+eval set -- "$PARSED"
+TYPE=text
+FILE='.'
+while true; do
+  case "$1" in
+    -h|--help)
+      cat <<-EOF
+Find text recursively in your directory
+Options:
+  -h        --help        Print this help message
+  -t type   --type type   search only in these file types (default: text)
+  -f file   --file file   search in the given directory
+Arguments:
+  --
+  Grep Arguments          Give arguments to pass to grep
+  search string           String to find (this is part of grep arguments)
+EOF
+      return 0
+      ;;
+    -t|--type)
+      TYPE="$2"
+      shift 2
+      ;;
+    -f|--file)
+      FILE="$2"
+      shift 2
+      ;;
+    --)
+      shift
+      break
+      ;;
+    *)
+      echo "Programming Error"
+      return 3
+      ;;
+  esac
+done
+
+files=($(find $FILE -type f -not -path '*/.*' ))
+text_files=()
+for file in ${files[@]}; do
+  type=$(filetype $file)
+  if [[ "$type" =~ "$TYPE" ]]; then
+    text_files+=($file)
+  fi
+done
+
+if [ -t 1 ]; then
+  FOUND=$(grep --color=always -in $@ ${text_files[@]})
+  exit_stat=$?
+  maybeless $FOUND
+  return $exit_stat
+else
+  grep -in $@ ${text_files[@]}
+  return $?
+fi
+

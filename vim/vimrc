@@ -139,6 +139,7 @@ if $CONFIG_DOT_COC == 'YES'
         " Coc only does snippet and additional edit on confrim.
         inoremap <expr> <cr> pumvisible() ? "\<C-y>" : "\<C-g>u\<CR>"
 
+	  set statusline=%h%m%r\ %<%{coc#status()}\ %=%f\ %=%l,%c%V\ \ %P
 endif
 
 " ctrlp
