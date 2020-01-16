@@ -5,7 +5,7 @@ LONGOPT=type:,file:,help
 PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPT --name "$0" -- "$@")
 exit_stat=$?
 if [[ $exit_stat -ne 0 ]]; then
-  return 2
+  exit 2
 fi
 eval set -- "$PARSED"
 TYPE=text
@@ -24,7 +24,7 @@ Arguments:
   Grep Arguments          Give arguments to pass to grep
   search string           String to find (this is part of grep arguments)
 EOF
-      return 0
+      exit 0
       ;;
     -t|--type)
       TYPE="$2"
@@ -40,7 +40,7 @@ EOF
       ;;
     *)
       echo "Programming Error"
-      return 3
+      exit 3
       ;;
   esac
 done
@@ -48,7 +48,7 @@ done
 files=($(find $FILE -type f -not -path '*/.*' ))
 text_files=()
 for file in ${files[@]}; do
-  type=$(filetype $file)
+  type=$(file -b --mime-type $file)
   if [[ "$type" =~ "$TYPE" ]]; then
     text_files+=($file)
   fi
@@ -57,10 +57,10 @@ done
 if [ -t 1 ]; then
   FOUND=$(grep --color=always -in $@ ${text_files[@]})
   exit_stat=$?
-  maybeless $FOUND
-  return $exit_stat
+  maybeless echo "$FOUND"
+  exit $exit_stat
 else
   grep -in $@ ${text_files[@]}
-  return $?
+  exit $?
 fi
 

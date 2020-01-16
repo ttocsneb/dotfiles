@@ -17,28 +17,19 @@ alias urmumbiggay="echo no u"
 
 alias filetype='file -b --mime-type'
 alias ft='findtext'
+alias ml='maybeless'
 
 if [[ $CONFIG_DOT_NEOVIM == "YES" ]]; then
   alias vim='nvim'
   alias vi='nvim'
 fi
 
-function maybeless {
-  # Check if the output is larger than the terminal window
-  if [ $(echo $@ | wc -l) -gt $(($(tput lines) - 2)) ]; then
-    echo $@ | less -R
-  else
-    echo $@
-  fi
-}
-
 function lesstree() {
   # Check if the function is being piped
   if [ -t 1 ]; then
     # Terminal
 
-    TREE=$("tree" -C $@)
-    maybeless $TREE
+    maybeless "tree" -C $@
   else
     # Pipe, output normal tree
     "tree" $@

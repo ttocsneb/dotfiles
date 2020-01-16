@@ -1,0 +1,9 @@
+#!/bin/bash
+
+OUTPUT=$($@)
+
+if [ $(echo $OUTPUT | wc -l) -gt $(($(tput lines) - 2)) ]; then
+  echo $OUTPUT | less -R
+else
+  echo $OUTPUT
+fi
