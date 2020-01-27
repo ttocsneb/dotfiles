@@ -9,11 +9,12 @@ alias disk="df -h | grep --color=never -E 'File|sd'"
 
 alias dotupdate="$DOTFILES/update.sh"
 
+alias lesstree="maybeless tree -C"
 alias lt="lesstree"
 alias simpletree="lesstree --filelimit=20"
 alias st="simpletree"
 
-alias urmumbiggay="echo no u"
+alias urmumbiggay="echo no u | less"
 
 alias filetype='file -b --mime-type'
 alias ft='findtext'
@@ -23,16 +24,3 @@ if [[ $CONFIG_DOT_NEOVIM == "YES" ]]; then
   alias vim='nvim'
   alias vi='nvim'
 fi
-
-function lesstree() {
-  # Check if the function is being piped
-  if [ -t 1 ]; then
-    # Terminal
-
-    maybeless "tree" -C $@
-  else
-    # Pipe, output normal tree
-    "tree" $@
-  fi
-}
-

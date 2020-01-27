@@ -1,9 +1,19 @@
 #!/bin/bash
 
-OUTPUT=$($@)
+tempfile=$(mktemp /tmp/maybeless.XXXX)
 
-if [ $(echo $OUTPUT | wc -l) -gt $(($(tput lines) - 2)) ]; then
-  echo $OUTPUT | less -R
+trap ctrl_c INT
+function ctrl_c {
+  rm $tempfile
+  exit 0
+}
+
+eval $@ > $tempfile
+
+if [ $(cat $tempfile | wc -l) -gt $(($(tput lines) - 2)) ]; then
+  cat $tempfile | less -R
 else
-  echo $OUTPUT
+  cat $tempfile
 fi
+
+rm $tempfile
