@@ -55,6 +55,9 @@ class Player:
     def is_playing(self):
         return self._info['PlaybackStatus'] == 'Playing'
 
+    def is_valid(self):
+        return self['title'] or self['artist']
+
     # Print information for a player
     def print_metadata(self):
         for k, v in self._trackMap.items():
@@ -107,19 +110,18 @@ class Player:
             icon = stylize(icon, fg(icolor))
 
         def format(text):
+            if text is None:
+                return ""
             if max_length > 0 and len(text) > max_length:
                 return text[0:max_length - 2].strip() + ".."
             return text
 
-        text = "{} — {}".format(
-            format(self['title']),
-            format(self['artist']))
-        if text is None:
-            text = "{} — {}".format(
-                format(self['status']),
-                format(self['length']))
+        items = (format(self['title']), format(self['artist']))
+        if items[0] == '' or items[1] == '':
+            items = (format(self['status']), format(self['length']))
             icon = "{}".format(self._play_icon
                                if self.is_playing() else self._pause_icon)
+        text = "{} — {}".format(*items)
         if not (tcolor is None):
             text = stylize(text, fg(tcolor))
         print(icon + spacing * " " + text)
@@ -144,7 +146,7 @@ except:
     pass
 
 try:
-    current = next(i for i in players.values())
+    current = next(i for i in players.values() if i.is_valid())
     current.print_to_bar(1, 30)
 except StopIteration:
     pass
