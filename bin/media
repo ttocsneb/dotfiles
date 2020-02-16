@@ -1,0 +1,150 @@
+#!/usr/bin/env python3
+# Author: edoz90
+import sys
+try:
+    # http://click.pocoo.org/5/why/
+    import dbus
+    from colored import fg, stylize
+except:
+    print("Need to install dbus-python and colored")
+    sys.exit(-1)
+
+
+class Player:
+
+    _name = None
+    _service = None
+    _player = None
+    _interface = None
+    _bus = dbus.SessionBus()
+    _info = {}
+    _pause_icon = "\uf04c"
+    _play_icon = "►"
+    _music_icon = "♫"
+    _trackMap = {
+        'trackid': 'mpris:trackid',
+        'length': 'mpris:length',
+        'artUrl': 'mpris:artUrl',
+        'album': 'xesam:album',
+        'artist': 'xesam:artist',
+        'title': 'xesam:title',
+        'url': 'xesam:url',
+        'rating': 'xesam:autoRating',
+        'status': 'PlaybackStatus',
+    }
+
+    def __init__(self, service):
+        self._service = service
+        self._name = service.split('.')[-1]
+        self._player = self._bus.get_object(self._service,
+                                            '/org/mpris/MediaPlayer2')
+        self._interface = dbus.Interface(
+            self._player, dbus_interface='org.freedesktop.DBus.Properties')
+        self.get_metadata()
+
+    # Get all availables information from DBus for a player object
+    def get_metadata(self):
+        self._info = {}
+        metadata = self._interface.GetAll('org.mpris.MediaPlayer2.Player')
+        for key, val in metadata.items():
+            if isinstance(val, dict):
+                for subk, subv in val.items():
+                    self._info[subk] = subv
+            self._info[key] = val
+
+    def is_playing(self):
+        return self._info['PlaybackStatus'] == 'Playing'
+
+    # Print information for a player
+    def print_metadata(self):
+        for k, v in self._trackMap.items():
+            if v not in self._info:
+                continue
+            val = self._info[v]
+            print("{}: {}".format(
+                stylize(k, fg('red')),
+                stylize(', '.join(val) if isinstance(val, list) else val,
+                        fg('blue'))))
+
+    def next(self):
+        dbus.Interface(
+            self._player,
+            dbus_interface='org.mpris.MediaPlayer2.Player').Next()
+
+    def prev(self):
+        dbus.Interface(
+            self._player,
+            dbus_interface='org.mpris.MediaPlayer2.Player').Previous()
+
+    def play_pause(self):
+        dbus.Interface(
+            self._player,
+            dbus_interface='org.mpris.MediaPlayer2.Player').PlayPause()
+
+    def stop(self):
+        dbus.Interface(
+            self._player,
+            dbus_interface='org.mpris.MediaPlayer2.Player').Stop()
+
+    def get_value(self, key):
+        try:
+            value = self._info[key]
+            if isinstance(value, int):
+                import datetime
+                return str(datetime.timedelta(microseconds=value))
+
+            if isinstance(value, list):
+                return ''.join(self._info[key])
+            return self._info[key]
+        except KeyError:
+            return ''
+
+    def print_to_bar(self, spacing, max_length=0, icolor=None, tcolor=None):
+        text = None
+        icon = "{}".format(self._music_icon
+                           if self.is_playing() else self._pause_icon)
+        if not (icolor is None):
+            icon = stylize(icon, fg(icolor))
+
+        def format(text):
+            if max_length > 0 and len(text) > max_length:
+                return text[0:max_length - 2].strip() + ".."
+            return text
+
+        text = "{} — {}".format(
+            format(self['title']),
+            format(self['artist']))
+        if text is None:
+            text = "{} — {}".format(
+                format(self['status']),
+                format(self['length']))
+            icon = "{}".format(self._play_icon
+                               if self.is_playing() else self._pause_icon)
+        if not (tcolor is None):
+            text = stylize(text, fg(tcolor))
+        print(icon + spacing * " " + text)
+
+    def __getitem__(self, key):
+        if key in self._trackMap.keys():
+            return self.get_value(self._trackMap[key])
+        return self.get_value(key)
+
+players = {}
+
+
+def test(s):
+    return 'org.mpris.MediaPlayer2' in s
+
+try:
+    players = {
+        str(s.split('.')[-1]): Player(s)
+        for s in dbus.SessionBus().list_names() if test(s)
+    }
+except:
+    pass
+
+try:
+    current = next(i for i in players.values())
+    current.print_to_bar(1, 30)
+except StopIteration:
+    pass

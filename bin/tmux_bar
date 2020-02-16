@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [[ $CONFIG_DOT_MUSIC == YES ]]; then
+        tm_music="#[fg=$tm_color_music]#(media) "
+else
+        tm_music=""
+fi
+
+if [[ $CONFIG_DOT_BATTERY == YES ]]; then
+        tm_battery="#[fg=default]#(battery) "
+else
+        tm_batery=""
+fi
+
+echo "$tm_music$tm_battery"

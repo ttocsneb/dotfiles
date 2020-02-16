@@ -1,4 +1,6 @@
 #!/bin/bash
+mode=${1:-simple}
+
 batt="/sys/class/power_supply/BAT0"
 
 # Symbols for charging, and not charging
@@ -10,43 +12,34 @@ charging="Charging"
 stat="$(cat $batt/status)"
 perc="$(cat $batt/capacity)"
 
-time_left="$(upower -i /org/freedesktop/UPower/devices/battery_BAT0 | grep time)"
-left=$([[ $time_left =~ .*:\ *(.*) ]] && echo ${BASH_REMATCH[1]})
+function getEvent {
+        cat $batt/uevent | grep -iPo "(?<=^POWER_SUPPLY_$1=).*"
+}
 
-if ! [ -z $left ]; then
-        left="- $left left"
+# Choose array based on charging
+if [ $stat == $charging ]; then
+        symbol=(${charge[@]})
 else
-        left=""
+        symbol=(${batter[@]})
 fi
 
-if [ $1 == "simple" ]; then
-        # Choose array based on charging
-        if [ $stat == $charging ]; then
-                symbol=(${charge[@]})
-        else
-                symbol=(${batter[@]})
-        fi
-
-        # Choose symbol based on percentage
-        if [[ $1 == "simple" ]]; then
-                sym='B'
-        elif [ $perc -le 14 ]; then
-                sym=${symbol[0]}
-        elif [ $perc -le 29 ]; then
-                sym=${symbol[1]}
-        elif [ $perc -le 43 ]; then
-                sym=${symbol[2]}
-        elif [ $perc -le 57 ]; then
-                sym=${symbol[3]}
-        elif [ $perc -le 71 ]; then
-                sym=${symbol[4]}
-        elif [ $perc -le 86 ]; then
-                sym=${symbol[5]}
-        else
-                sym=${symbol[6]}
-        fi
+# Choose symbol based on percentage
+if [[ $CONFIG_DOT_NERD != "YES" ]]; then
+        sym='B'
+elif [ $perc -le 14 ]; then
+        sym=${symbol[0]}
+elif [ $perc -le 29 ]; then
+        sym=${symbol[1]}
+elif [ $perc -le 43 ]; then
+        sym=${symbol[2]}
+elif [ $perc -le 57 ]; then
+        sym=${symbol[3]}
+elif [ $perc -le 71 ]; then
+        sym=${symbol[4]}
+elif [ $perc -le 86 ]; then
+        sym=${symbol[5]}
 else
-        sym=""
+        sym=${symbol[6]}
 fi
 
 echo "$sym $(cat $batt/capacity)% $left"

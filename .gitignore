@@ -1,3 +1,4 @@
 vim/bundle
-dotrc
+dotrc*
 .lastupdate
+__pycache__

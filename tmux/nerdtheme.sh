@@ -58,20 +58,11 @@ set-window-option -g clock-mode-colour $tm_color_time
 
 # tm_tunes="#[fg=$tm_color_music]#(osascript ~/.dotfiles/applescripts/tunes.scpt | cut -c 1-50)"
 
-# Set the Battery
-if-shell '[[ $CONFIG_DOT_BATTERY == YES ]]' \
-  'tm_battery="#[fg=default]#(battery)"' \
-  'tm_battery=""'
-
-# Set the Music
-if-shell '[[ $CONFIG_DOT_MUSIC == YES ]]' \
-  'tm_music="#[fg=$tm_color_music]#(music)"' \
-  'tm_music=""'
 
 tm_date="#[fg=$tm_color_time] %R %b %d"
 # tm_host="#[fg=$tm_color_feature,bold]#h"
 tm_session_name="#[fg=$tm_color_feature,bold]#S"
 
 set -g status-left "$tm_session_name "
-set -g status-right "$tm_music $tm_battery $tm_date"
+set -g status-right "#(tmux_bar)$tm_date"
 

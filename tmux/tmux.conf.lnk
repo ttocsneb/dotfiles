@@ -97,7 +97,9 @@ bind C-v run "tmux set-buffer $(reattach-to-user-namespace pbpaste); tmux paste-
 ### Color & Style Settings ###
 ##############################
 
-if-shell '! [ -z ${CONFIG_DOT_THEME+x} ]' \
-        'source $DOTFILES/tmux/$CONFIG_DOT_THEME.sh' \
-        'source $DOTFILES/tmux/ttocsnebtheme.sh'
+if-shell '[ -z ${CONFIG_DOT_THEME+x} ]' \
+        'source $DOTFILES/tmux/ttocsnebtheme.sh' \
+        'source $DOTFILES/tmux/$CONFIG_DOT_THEME.sh'
+
+# source $DOTFILES/tmux/nerdtheme.sh
 
