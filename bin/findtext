@@ -1,28 +1,46 @@
 #!/bin/bash
 
-OPTIONS=t:f:h
-LONGOPT=type:,file:,help
-PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPT --name "$0" -- "$@")
+# Options
+
+# Separate Positional argument from grep arguments by adding a -- after any --
+ARGS=()
+for i in "$@"; do
+  ARGS=("${ARGS[@]}" "$i")
+  if [ "$i" == '--' ]; then
+    ARGS=("${ARGS[@]}" "--")
+  fi
+done
+
+# Parse main options
+OPTIONS=t:d:hVc
+LONGOPT=type:,directory:,help,verbose,case-sensitive
+PARSED="$(getopt --options=$OPTIONS --longoptions=$LONGOPT --name "$0" -- "${ARGS[@]}")"
 exit_stat=$?
 if [[ $exit_stat -ne 0 ]]; then
   exit 2
 fi
-eval set -- "$PARSED"
+
+# Extract Main options
+eval set -- "$PARSED --"
 TYPE=text
 FILE='.'
+VERBOSE=NO
+CASE='i'
 while true; do
   case "$1" in
     -h|--help)
       cat <<-EOF
 Find text recursively in your directory
 Options:
-  -h        --help        Print this help message
-  -t type   --type type   search only in these file types (default: text)
-  -f file   --file file   search in the given directory
+  -h        --help            Print this help message
+  -t type   --type type       search only in these file types (default: text)
+  -d file   --directory file  search in the given directory
+  -V        --verbose         Print more output
+  -c        --case-sensitive  Make it so searches are case sensitive
 Arguments:
+  search string               String to find (this is part of grep arguments)
   --
-  Grep Arguments          Give arguments to pass to grep
-  search string           String to find (this is part of grep arguments)
+  Grep Arguments              Give arguments to pass to grep
 EOF
       exit 0
       ;;
@@ -30,9 +48,17 @@ EOF
       TYPE="$2"
       shift 2
       ;;
-    -f|--file)
+    -d|--directory)
       FILE="$2"
       shift 2
+      ;;
+    -V|--verbose)
+      VERBOSE=YES
+      shift
+      ;;
+    -c|--case-sensitive)
+      CASE=""
+      shift
       ;;
     --)
       shift
@@ -45,6 +71,23 @@ EOF
   esac
 done
 
+# Separate Search string from gre arguments
+SEARCH=()
+while true; do
+  case "$1" in
+    --)
+      shift
+      break
+      ;;
+    *)
+      SEARCH=("${SEARCH[@]}" "$1")
+      shift
+      ;;
+  esac
+done
+SEARCH="'${SEARCH[@]}'"
+
+# Search for text
 files=($(find $FILE -type f -not -path '*/.*' ))
 text_files=()
 for file in ${files[@]}; do
@@ -55,12 +98,11 @@ for file in ${files[@]}; do
 done
 
 if [ -t 1 ]; then
-  FOUND=$(grep --color=always -in $@ ${text_files[@]})
-  exit_stat=$?
-  maybeless echo "$FOUND"
-  exit $exit_stat
+  if [ $VERBOSE == 'YES' ]; then
+    echo maybeless grep --color=always "-n$CASE" "$@" "$SEARCH" ${text_files[@]}
+  fi
+  maybeless grep --color=always "-n$CASE" "$@" "$SEARCH" ${text_files[@]}
 else
-  grep -in $@ ${text_files[@]}
-  exit $?
+  grep "-n$CASE" $@ "$SEARCH" ${text_files[@]}
 fi
 

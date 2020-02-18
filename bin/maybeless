@@ -8,7 +8,8 @@ function ctrl_c {
   exit 0
 }
 
-eval $@ > $tempfile
+eval "$@" > $tempfile
+STATUS=$?
 
 if [ $(cat $tempfile | wc -l) -gt $(($(tput lines) - 2)) ]; then
   cat $tempfile | less -R
@@ -17,3 +18,5 @@ else
 fi
 
 rm $tempfile
+
+exit $STATUS

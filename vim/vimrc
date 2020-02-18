@@ -10,7 +10,7 @@ call vundle#rc("$DOTFILES/vim/bundle")
 call vundle#begin()
 " Plugins
 Plugin 'VundleVim/Vundle.vim'
-Plugin 'kien/ctrlp.vim' " fuzzy find files
+Plugin 'ctrlpvim/ctrlp.vim' " fuzzy find files
 Plugin 'scrooloose/nerdtree' " file drawer, open with :NERDTreeToggle
 Plugin 'Xuyuanp/nerdtree-git-plugin' " Git status in nerdtree
 Plugin 'scrooloose/nerdcommenter' " Comment lines
@@ -218,11 +218,22 @@ nnoremap <leader>ez :vsp ~/.zshrc<CR>
 "let g:ctrlp_user_command = 'ag %s -l --nocolor --hidden -g ""'
 
 "Backups
-set backup
-set backupdir=~/.vim-tmp,~/.tmp,/var/tmp,/tmp
-set backupskip=/tmp/*,/private/tmp/*
-set directory=~/.vim-tmp,~/.tmp,~/tmp,/var/tmp,/tmp
-set writebackup
+" set backup
+" set backupdir=~/.vim-tmp,~/.tmp,/var/tmp,/tmp
+" set backupskip=/tmp/*,/private/tmp/*
+" set directory=~/.vim-tmp,~/.tmp,~/tmp,/var/tmp,/tmp
+" set writebackup
+
+" Tab mappings
+nnoremap <leader>1 :set shiftwidth=1<CR>
+nnoremap <leader>2 :set shiftwidth=2<CR>
+nnoremap <leader>3 :set shiftwidth=3<CR>
+nnoremap <leader>4 :set shiftwidth=4<CR>
+nnoremap <leader>5 :set shiftwidth=5<CR>
+nnoremap <leader>6 :set shiftwidth=6<CR>
+nnoremap <leader>7 :set shiftwidth=7<CR>
+nnoremap <leader>8 :set shiftwidth=8<CR>
+nnoremap <leader>9 :set shiftwidth=9<CR>
 
 " AutoGroup
 augroup configgroup
@@ -246,7 +257,10 @@ augroup configgroup
     autocmd BufEnter *.cls setlocal filetype=java
     autocmd BufEnter *.zsh-theme setlocal filetype=zsh
     autocmd BufEnter Makefile setlocal noexpandtab
-    autocmd BufEnter *.sh setlocal tabstop=2
-    autocmd BufEnter *.sh setlocal shiftwidth=2
-    autocmd BufEnter *.sh setlocal softtabstop=2
+    autocmd FileType sh setlocal tabstop=2
+    autocmd FileType sh setlocal shiftwidth=2
+    autocmd FileType sh setlocal softtabstop=2
+    autocmd FileType yaml setlocal shiftwidth=2
+    autocmd FileType markdown setlocal shiftwidth=2
+    autocmd FileType rmd setlocal shiftwidth=2
 augroup END
