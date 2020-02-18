@@ -33,7 +33,7 @@ while true; do
 Find text recursively in your directory
 Options:
   -h        --help            Print this help message
-  -t type   --type type       search only in these file types (default: text)
+  -t type   --type type       search only in these file types (default: text) (Use 'file -b --mime-type FILE' to get type) 
   -d file   --directory file  search in the given directory
   -V        --verbose         Print more output
   -c        --case-sensitive  Make it so searches are case sensitive
@@ -88,14 +88,28 @@ done
 SEARCH="'${SEARCH[@]}'"
 
 # Search for text
-files=($(find $FILE -type f -not -path '*/.*' ))
+files="$(find $FILE -type f -not -path '*/.*' -printf '%p|' | sed 's/|$/\n/')"
+IFS='|'
+files=($files)
 text_files=()
 for file in ${files[@]}; do
-  type=$(file -b --mime-type $file)
-  if [[ "$type" =~ "$TYPE" ]]; then
-    text_files+=($file)
+  t=$(file -b --mime-type "$file")
+  if [[ "$t" =~ "$TYPE" ]]; then
+    if [ $VERBOSE == 'YES' ]; then
+      echo searching in $file
+    fi
+    text_files+=("'$file'")
   fi
 done
+
+if [ ${#text_files[@]} -eq 0 ]; then
+  echo "Could not find any files"
+  exit 1
+fi
+
+if [ $VERBOSE == 'YES' ]; then
+  echo searching ${#text_files[@]} files
+fi
 
 if [ -t 1 ]; then
   if [ $VERBOSE == 'YES' ]; then
