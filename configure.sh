@@ -4,7 +4,7 @@ version=1
 
 #!/bin/bash
 function tolow {
-  echo $(echo $1 | tr '[:upper:]' '[:lower:]')
+  echo $1 | tr '[:upper:]' '[:lower:]'
 }
 
 function is_yes {
@@ -22,7 +22,7 @@ function is_no {
 echo Configuring Dotfiles
 echo ====================
 
-read -p "Do you want to configure local or global config? [L/g]" conf
+read -rp "Do you want to configure local or global config? [L/g]" conf
 lower="$(tolow $conf)"
 config="$HOME/.dotrc"
 if [[ $lower == g* ]]; then
@@ -52,21 +52,21 @@ if ! is_no "$use_vim"; then
 fi
 echo "CONFIG_DOT_NEOVIM=$CONFIG_DOT_NEOVIM" >> $config
 
-read -p "Do you want automatically to check for dotfile updates? [Y/n] " update
+read -rp "Do you want automatically to check for dotfile updates? [Y/n] " update
 CONFIG_UPDATE=NO
 if ! is_no "$update"; then
   CONFIG_UPDATE=YES
 fi
 printf "CONFIG_DOT_UPDATE=$CONFIG_UPDATE\n\n" >> $config
 
-read -p "Are you using NerdFonts? [y/N] " nerd
+read -rp "Are you using NerdFonts? [y/N] " nerd
 
 CONF_THEME='$DOTFILES/zsh/themes/ttocsneb.zsh'
 CONFIG_NERD='NO'
 if is_yes "$nerd"; then
   CONFIG_NERD='YES'
 
-  read -p "Would you like to use PowerLevel9k? [Y/n] " pl9k
+  read -rp "Would you like to use PowerLevel9k? [Y/n] " pl9k
   if ! is_no "$pl9k"; then
     echo Changing theme from PowerLevel9k to ttocsneb
     CONF_THEME='$DOTFILES/zsh/themes/pl9k.zsh'
@@ -74,7 +74,7 @@ if is_yes "$nerd"; then
 fi
 printf "source \"$CONF_THEME\"\n\nexport CONFIG_DOT_NERD=$CONFIG_NERD\n" >> $config
 
-read -p "Do you want to use COC? [y/N] " useCoc
+read -rp "Do you want to use COC? [y/N] " useCoc
 COC=NO
 if ! is_no "$useCoc"; then
   COC=YES
