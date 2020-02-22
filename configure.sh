@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version=1
+version=2
 
 #!/bin/bash
 function tolow {
@@ -35,7 +35,9 @@ if [ -e "$config" ]; then
   mv "$config" "$HOME/.original-dotfiles"
 fi
 
-printf "# vi:syntax=zsh\nCONFIG_DOT_VER=$version\n\n# Dotfiles Config\n" > $config
+cat "$DOTFILES/drc.template" > $config
+
+printf "# vi:syntax=zsh\nCONFIG_DOT_VER=$version\n\n# Dotfiles Config\n" >> $config
 
 if [ -z ${use_vim+x} ]; then
   if ! hash nvim &> /dev/null; then
@@ -50,14 +52,14 @@ if ! is_no "$use_vim"; then
   echo disabling neovim
   CONFIG_DOT_NEOVIM=NO
 fi
-echo "CONFIG_DOT_NEOVIM=$CONFIG_DOT_NEOVIM" >> $config
+echo "export CONFIG_DOT_NEOVIM=$CONFIG_DOT_NEOVIM" >> $config
 
 read -rp "Do you want automatically to check for dotfile updates? [Y/n] " update
 CONFIG_UPDATE=NO
 if ! is_no "$update"; then
   CONFIG_UPDATE=YES
 fi
-printf "CONFIG_DOT_UPDATE=$CONFIG_UPDATE\n\n" >> $config
+printf "export CONFIG_DOT_UPDATE=$CONFIG_UPDATE\n\n" >> $config
 
 read -rp "Are you using NerdFonts? [y/N] " nerd
 
@@ -68,7 +70,6 @@ if is_yes "$nerd"; then
 
   read -rp "Would you like to use PowerLevel9k? [Y/n] " pl9k
   if ! is_no "$pl9k"; then
-    echo Changing theme from PowerLevel9k to ttocsneb
     CONF_THEME='$DOTFILES/zsh/themes/pl9k.zsh'
   fi
 fi

@@ -103,21 +103,17 @@ function link {
   echo --------------------
 }
 
-function migrate {
-  CURVER=1
+function migrate_i {
+  CURVER=2
 
-  if [ -e "$HOME/.dotrc" ]; then
-    dotconfig="$HOME/.dotrc"
-  elif [ -e "$DOTFILES/dotrc" ]; then
-    dotconfig="$DOTFILES/dotrc"
-  else
-    $DOTFILES/configure.sh
-    return 0
-  fi
-  if version=$(< $dotconfig grep -Po '(?<=CONFIG_DOT_VER=)\d+'); then
+  dotconfig="$1"
+
+  if ! version=$(< $dotconfig grep -Po '(?<=CONFIG_DOT_VER=)\d+'); then
     version=0
     return 0
   fi
+
+  echo $dotconfig
 
   if [ -z $version ]; then
     $DOTFILES/configure.sh
@@ -125,16 +121,34 @@ function migrate {
     echo Could not detect version :/  Reconfiguring
     $DOTFILES/configure.sh
   elif [ $version -lt $CURVER ]; then
-    echo Migrating old configurations
+    echo Updating old configurations:
     while [ $version -lt $CURVER ]; do
       case "$version" in
         1)
-          echo Migration!
+          printf "\tAppending New Template"
+          old_rc=$(cat $dotconfig)
+          cat "$DOTFILES/drc.template" > $dotconfig
+          echo "$old_rc" >> $dotconfig
           ;;
       esac
       ((version++))
     done
     sed -i "s/CONFIG_DOT_VER=.*/CONFIG_DOT_VER=$CURVER/g" $dotconfig
+  fi
+}
+
+function migrate {
+  migrated=NO
+  if [ -e "$HOME/.dotrc" ]; then
+    migrate_i "$HOME/.dotrc"
+    migrated=YES
+  fi
+  if [ -e "$DOTFILES/dotrc" ]; then
+    migrate_i "$DOTFILES/dotrc"
+    migrated=YES
+  fi
+  if [ $migrated == "NO" ]; then
+    $DOTFILES/configure.sh
   fi
 }
 
@@ -166,6 +180,8 @@ if [ -d $DOTFILES/.git ]; then
       echo --------------------
       echo Successfully update dotfiles
     fi
+  else
+    migrate
   fi
   if ! [[ $(readlink "$HOME/.zshrc") == "$DOTFILES/zsh/zshrc.lnk" ]]; then
     echo "dotfiles isn't linked to your home directory."
