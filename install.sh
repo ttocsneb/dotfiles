@@ -18,21 +18,22 @@ fi
 eval set -- "$PARSED"
 
 # Parse options
+export DOTFILES=${DOTFILES:-$HOME/.dotfiles}
 DOTBRANCH=${DOTBRANCH:-master}
-DOTFILES=${DOTFILES:-$HOME/.dotfiles}
 REMOTE="https://github.com/ttocsneb/dotfiles.git"
 while true; do
   case "$1" in
     -h|--help)
       cat << EOF
-Dotfiles Installer.  This script will install ttocsneb's dotfiles for you.  You will need tmux,zsh and neovim (vim is also acceptable)
+Dotfiles Installer.  This script will install ttocsneb's dotfiles for you.
+You will need tmux,zsh and neovim (vim is also acceptable)
 Arguments:
-  -h            --help              Print this help message
-  -b <branch>   --branch <branch>   Pull from the specified git branch (master)
-                                      Can also set \$DOTBRANCH
-  -s            --ssh               Use ssh to pull instead of https
+  -h            --help          Print this help message
+  -b BRANCH   --branch BRANCH   Pull from the specified git branch (master)
+                                  Can also set \$DOTBRANCH
+  -s            --ssh           Use ssh to pull instead of https
 Positional Arguments:
-  [install]                         Directory to install to (\$HOME/.dotfiles)
+  DIRECTORY                     Directory to install to (\$HOME/.dotfiles)
 EOF
       exit 0
       ;;
@@ -61,7 +62,7 @@ fi
 
 # Install Functions
 function tolow {
-  echo $(echo $1 | tr '[:upper:]' '[:lower:]')
+  echo $1 | tr '[:upper:]' '[:lower:]'
 }
 
 function is_yes {
@@ -87,7 +88,7 @@ function backup {
     -or -name .vimrc \
     -or -name .tmux.conf \
     -or -name init.vim \
-    | xargs -r mv -v -t $BACKUP_DOTFILES
+    -print0 | xargs -0r mv -v -t $BACKUP_DOTFILES
   echo --------------------
 }
 
@@ -102,24 +103,17 @@ function link {
   echo --------------------
 }
 
-function migrate {
-  CURVER=1
+function migrate_i {
+  CURVER=2
 
-  if [ -e "$HOME/.dotrc" ]; then
-    dotconfig="$HOME/.dotrc"
-  elif [ -e "$DOTFILES/dotrc" ]; then
-    dotconfig="$DOTFILES/dotrc"
-  else
-    $DOTFILES/configure.sh
-    return 0
-  fi
-  dotrc=$(cat $dotconfig | grep CONFIG_DOT_VER=)
-  if [ $? -ne 0 ]; then
+  dotconfig="$1"
+
+  if ! version=$(< $dotconfig grep -Po '(?<=CONFIG_DOT_VER=)\d+'); then
     version=0
     return 0
-  else
-    version=${dotrc/CONFIG_DOT_VER=/}
   fi
+
+  echo $dotconfig
 
   if [ -z $version ]; then
     $DOTFILES/configure.sh
@@ -127,11 +121,14 @@ function migrate {
     echo Could not detect version :/  Reconfiguring
     $DOTFILES/configure.sh
   elif [ $version -lt $CURVER ]; then
-    echo Migrating old configurations
+    echo Updating old configurations:
     while [ $version -lt $CURVER ]; do
       case "$version" in
         1)
-          echo Migration!
+          printf "\tAppending New Template"
+          old_rc=$(cat $dotconfig)
+          cat "$DOTFILES/drc.template" > $dotconfig
+          echo "$old_rc" >> $dotconfig
           ;;
       esac
       ((version++))
@@ -140,14 +137,33 @@ function migrate {
   fi
 }
 
+function migrate {
+  migrated=NO
+  if [ -e "$HOME/.dotrc" ]; then
+    migrate_i "$HOME/.dotrc"
+    migrated=YES
+  fi
+  if [ -e "$DOTFILES/dotrc" ]; then
+    migrate_i "$DOTFILES/dotrc"
+    migrated=YES
+  fi
+  if [ $migrated == "NO" ]; then
+    $DOTFILES/configure.sh
+  fi
+}
+
 if [ -d $DOTFILES/.git ]; then
+  if ! [ -w "$DOTFILES/.git" ]; then
+    echo "You do not have permission to update dotfiles"
+    exit 1
+  fi
   cd $DOTFILES
   # Check for updates
   git fetch
   branch="$(git branch | grep \* | cut -d ' ' -f2-)"
   if ! git merge-base --is-ancestor "origin/$branch" HEAD; then
     echo There is an update to Dotfiles!
-    read -p "Do you want to update? (y/N): " cont
+    read -rp "Do you want to update? (y/N): " cont
     if is_yes "$cont"; then
       echo Updating dotfiles
       echo ====================
@@ -164,10 +180,12 @@ if [ -d $DOTFILES/.git ]; then
       echo --------------------
       echo Successfully update dotfiles
     fi
+  else
+    migrate
   fi
   if ! [[ $(readlink "$HOME/.zshrc") == "$DOTFILES/zsh/zshrc.lnk" ]]; then
     echo "dotfiles isn't linked to your home directory."
-    read -p "Should I link it for you? (Y/n): " linked
+    read -rp "Should I link it for you? (Y/n): " linked
     if ! is_no "$linked"; then
       backup
       link
@@ -176,8 +194,11 @@ if [ -d $DOTFILES/.git ]; then
   exit 0
 elif [ -d $DOTFILES ]; then
   echo "'$DOTFILES' already exists!"
-  echo "If you wan to change the install directory for dotfiles, you can set the 'DOTFILES' variable before running this command"
-  read -p "Would you like me to delete '$DOTFILES' for you? (y/N): " delet
+  cat <<-EOF
+If you wan to change the install directory for dotfiles, you can set the
+'DOTFILES' variable before running this command"
+EOF
+  read -rp "Would you like me to delete '$DOTFILES' for you? (y/N): " delet
   if is_yes "$delet"; then
     rm -r $DOTFILES
   else
@@ -188,11 +209,15 @@ fi
 
 # Check if Install directory is OK
 
-read -p "Installing Dotfiles on the $DOTBRANCH branch to '$DOTFILES' Is that ok? [Y/n] " install_ok
+read -rp "Installing Dotfiles on the $DOTBRANCH branch to '$DOTFILES' Is that ok? [Y/n] " install_ok
 
 if is_no $install_ok; then
-  echo "Stopping installation.."
-  echo "To change the install location, either set \$DOTFILES before running the script, or pass the install location as a parameter"
+  cat <<-EOF
+Stopping installation..
+
+To change the install location, either set \$DOTFILES before running the script
+or pass the install location as a parameter
+EOF
   exit 1
 fi
 
@@ -202,7 +227,7 @@ backup
 
 # Check for necessary packages
 
-packages=("zsh" "tmux" "nvim")
+packages=("zsh" "tmux" "nvim" "git")
 to_install=()
 for package in ${packages[@]}; do
   if ! hash $package &> /dev/null; then
@@ -212,16 +237,14 @@ done
 
 use_vim="no"
 vim="nvim"
-if [[ " ${to_install[@]} " =~ " nvim " ]]; then
-  read -p "neovim isn't installed.  Should I use vim instead? (Y/n)" use_vim
-  if ! is_no "$use_vim"; then
-    tmp=(${to_install[@]})
-    to_install=()
-    for el in ${to_install[@]}; do
-      if [[ "$el" != "nvim" ]]; then
-        to_install+=("$el")
-      fi
-    done
+if [[ "${to_install[*]}" =~ "nvim" ]]; then
+  # Remove nvim from the install list
+  to_install=(${to_install[@]/nvim/})
+  read -rp "neovim isn't installed.  Should I use vim instead? (Y/n)" use_vim
+  if is_no "$use_vim"; then
+    # We want to use nvim, so add neovim (the package name) back to to_install
+    to_install+=("neovim")
+  else
     vim="vim"
   fi
 fi
@@ -239,23 +262,22 @@ echo ====================
 git clone -b $DOTBRANCH --single-branch --depth=1 $REMOTE $DOTFILES
 cd $DOTFILES
 
+echo Installing Oh-My-Zsh
+echo ====================
 export ZSH=$DOTFILES/zsh/oh-my-zsh
 export RUNZSH=no
+ohmyzsh_remote=https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh
 rm -r $DOTFILES/zsh/oh-my-zsh
-sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+sh -c "$(curl -fsSL $ohmyzsh_remote)"
 rm $HOME/.zshrc
+echo --------------------
 
+echo Cloning Submodules
+echo ====================
 git submodule init
 git submodule update --remote
 echo --------------------
-
-# echo Installing Oh-My-Zsh
-# echo ====================
-# ZSH=$DOTFILES/zsh/oh-my-zsh/
-# RUNZSH=no
-# sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-# rm $HOME/.zshrc
-# echo --------------------
+echo --------------------
 
 link
 
@@ -266,7 +288,7 @@ migrate
 
 echo Done!
 
-read -p "Should I run your new shell? (Y/n): " changeshell
+read -rp "Should I run your new shell? (Y/n): " changeshell
 if ! is_no "$changshell"; then
   exec zsh -l
 else

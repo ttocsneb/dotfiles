@@ -37,10 +37,10 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/ttocsneb/dotfiles/master
 If you would like to install from a different branch you can use this command
 
 ```sh
-bash -c "$curl -fsSL https://raw.githubusercontent.com/ttocsneb/dotfiles/<branch>/install.sh" -- -b <branch>
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/ttocsneb/dotfiles/<branch>/install.sh)" -- -b <branch>
 
 # installing the devel branch
-bash -c "$curl -fsSL https://raw.githubusercontent.com/ttocsneb/dotfiles/devel/install.sh" -- -b devel
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/ttocsneb/dotfiles/devel/install.sh)" -- -b devel
 ```
 
 Eventually, I will make it so you could install any branch from any other branch.
