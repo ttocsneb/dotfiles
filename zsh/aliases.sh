@@ -8,6 +8,7 @@ alias open='xdg-open'
 alias disk="df -h | grep --color=never -E 'File|sd'"
 
 alias dotupdate="$DOTFILES/update.sh"
+alias dotsetup="$DOTFILES/install.sh"
 
 alias lesstree="maybeless tree -C"
 alias lt="lesstree"

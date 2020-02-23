@@ -2,8 +2,9 @@
 
 cd $DOTFILES
 
-branch="$(git branch | grep \* | cut -d ' ' -f2-)"
+branch="$(git branch | grep -Po '(?<=\* ).*')"
 
-echo Checking for updates in the $branch branch of dotfiles
-
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/ttocsneb/dotfiles/$branch/install.sh)"
+if git branch --all | grep -q "remotes/.*/$branch"; then
+  echo Checking for updates in the $branch branch of dotfiles
+  bash -c "$(curl -fsSL https://raw.githubusercontent.com/ttocsneb/dotfiles/$branch/install.sh)" -- --silent
+fi
