@@ -1,0 +1,46 @@
+#!/bin/bash
+
+CURVER=3
+
+dotConfig="$1"
+dotDest="${2:-$dotConfig}"
+
+if [ -f "$dotConfig" ]; then
+  if ! version=$(grep -Po '(?<=CONFIG_DOT_VER=)\d+' "$dotConfig"); then
+    version=0
+  fi
+elif [ -d "$dotConfig" ]; then
+  if ! version=$(cat "$dotConfig/.version"); then
+    version=0
+  fi
+fi
+
+if [ -z $version ] || [ $version -eq 0 ]; then
+  echo Could not detect version :/  Reconfiguring
+  $DOTFILES/bin/dotconfig
+elif [ $version -lt $CURVER ]; then
+  echo Updating old configurations:
+  while [ $version -lt $CURVER ]; do
+    case "$version" in
+      1)
+        printf "\tAppending Template\n"
+        old_rc=$(cat $dotConfig)
+        cat "$DOTFILES/config/zsh-template.zsh" > $dotConfig
+        echo "$old_rc" >> $dotConfig
+        ;;
+      2)
+        printf "\tConverting to Folder\n"
+        mkdir -p $(dirname "$dotDest")
+        oldConf="$dotDest/$(basename "$dotConfig").old"
+        mv "$dotConfig" "$oldConf"
+        cp "$oldConf" "$dotDest/zsh.zsh"
+        zshConf="$dotDest/zsh.zsh"
+        # Remove useless Settings
+        sed -i '/CONFIG_DOT_VER/d' "$zshConf"
+        # TODO move dotrc settings to proper files
+        ;;
+    esac
+    ((version++))
+  done
+  echo $CURVER > "$dotDest/.version"
+fi

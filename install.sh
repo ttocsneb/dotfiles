@@ -140,10 +140,10 @@ function migrate_i {
   fi
 
   if [ -z $version ]; then
-    $DOTFILES/configure.sh
+    $DOTFILES/bin/dotconfig
   elif [ $version -eq 0 ]; then
     echo Could not detect version :/  Reconfiguring
-    $DOTFILES/configure.sh
+    $DOTFILES/bin/dotconfig
   elif [ $version -lt $CURVER ]; then
     echo Updating old configurations:
     while [ $version -lt $CURVER ]; do
@@ -172,7 +172,7 @@ function migrate {
     migrated=YES
   fi
   if [ $migrated == "NO" ]; then
-    $DOTFILES/configure.sh
+    $DOTFILES/bin/dotconfig
   fi
 }
 

@@ -5,13 +5,27 @@ export DOTFILES="$(dirname "$(dirname "$(readlink "$HOME/.zshrc")")")"
 # Note: $DOTFILES/dotrc will always be loaded, but $HOME/.dotrc will override it
 
 # Load the settings
-if ! [[ -e "$HOME/.dotrc" || -e "$DOTFILES/dotrc" ]]; then
+globalRC="$DOTFILES/dotrc"
+localRC=("$HOME/.config/dotrc" "$HOME/.dotrc")
+RCs=(${localRC[@]} $globalRC)
+any=NO
+for rc in $RCs; do
+        if [[ -e "$rc" ]]; then
+                any=YES
+                break
+        fi
+done
+
+if [ $any == "NO" ]; then
         echo "No configuration found"
         "$DOTFILES/configure.sh"
 fi
 if [ -e "$DOTFILES/dotrc" ]; then
         source "$DOTFILES/dotrc"
 fi
+for rc in $localRC; do
+        source 
+done
 if [ -e "$HOME/.dotrc" ]; then
         source "$HOME/.dotrc"
 fi

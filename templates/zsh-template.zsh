@@ -1,5 +1,3 @@
-# vi:syntax=zsh
-
 # Uncomment the following line to use case-sensitive completion.
 # CASE_SENSITIVE="true"
 
@@ -70,3 +68,4 @@ fi
 
 # Compilation flags
 # export ARCHFLAGS="-arch x86_64"
+

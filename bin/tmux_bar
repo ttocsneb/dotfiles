@@ -9,7 +9,7 @@ fi
 if [[ $CONFIG_DOT_BATTERY == YES ]]; then
         tm_battery="#[fg=default]#(battery) "
 else
-        tm_batery=""
+        tm_battery=""
 fi
 
 echo "$tm_music$tm_battery"

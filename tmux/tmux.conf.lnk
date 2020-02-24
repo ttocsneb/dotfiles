@@ -2,7 +2,6 @@
 #set -g default-command "login-shell"
 
 # tmux display things in 256 colors
-set -g default-terminal "tmux-256color-italic"
 set -as terminal-overrides ',xterm*:Tc:sitm=\E[3m'
 
 set -g history-limit 20000
@@ -45,7 +44,7 @@ setw -g pane-base-index 1
 
 set-option -g set-titles on
 set-option -g set-titles-string "#T - #W"
-# set-window-option -g automatic-rename on
+set-window-option -g automatic-rename on
 
 ######################
 #### Key Bindings ####
@@ -83,7 +82,7 @@ setw -g mouse on
 setw -g mode-keys vi
 # more settings to make copy-mode more vim-like
 unbind [
-bind Escape copy-mode
+bind v copy-mode
 unbind p
 bind p paste-buffer
 bind -Tcopy-mode-vi 'v' send -X begin-selection
@@ -93,8 +92,9 @@ bind -Tcopy-mode-vi 'y' send -X copy-pipe-and-cancel "tmux save-buffer - | reatt
 bind C-c run "tmux save-buffer - | reattach-to-user-namespace pbcopy"
 bind C-v run "tmux set-buffer $(reattach-to-user-namespace pbpaste); tmux paste-buffer"
 
-##############################
-### Color & Style Settings ###
-##############################
+#############################
+### User defined Settings ###
+#############################
 
-source $DOTFILES/tmux/$CONFIG_DOT_THEME.conf
+source $DOTFILES/config/tmux.conf
+source $HOME/.config/dotfiles/tmux.conf
