@@ -1,4 +1,21 @@
-# Uncomment the following line to use case-sensitive completion.
+#!/bin/zsh
+
+# Set name of the theme to load --- if set to "random", it will
+# load a random theme each time oh-my-zsh is loaded, in which case,
+# to know which specific one was loaded, run: echo $RANDOM_THEME
+# See https://github.com/robbyrussell/oh-my-zsh/wiki/Themes
+# ZSH_THEME="robbyrussell"
+ZSH_THEME="powerlevel9k/powerlevel9k"
+
+POWERLEVEL9K_PROMPT_ON_NEWLINE=true
+#POWERLEVEL9K_DISABLE_RPROMPT=true
+POWERLEVEL9K_MODE='nerdfont-complete'
+POWERLEVEL9K_MULTILINE_FIRST_PROMPT_PREFIX="┌"
+POWERLEVEL9K_MULTILINE_LAST_PROMPT_PREFIX="└>"
+
+POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=( virtualenv status time)
+
+## Uncomment the following line to use case-sensitive completion.
 # CASE_SENSITIVE="true"
 
 # Uncomment the following line to use hyphen-insensitive completion.
@@ -63,7 +80,7 @@ plugins=(git)
 if [[ -n $SSH_CONNECTION ]]; then
   export EDITOR='vim'
 else
-  export EDITOR='mvim'
+  export EDITOR='nvim'
 fi
 
 # Compilation flags

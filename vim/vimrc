@@ -4,6 +4,22 @@ filetype off
 " set the runtime path to include Vundle and initialize
 set rtp+=$DOTFILES/vim/bundle/Vundle.vim
 
+call vundle#rc("$DOTFILES/vim/bundle")
+call vundle#begin()
+
+" Plugins
+Plugin 'VundleVim/Vundle.vim'
+Plugin 'ctrlpvim/ctrlp.vim' " fuzzy find files
+Plugin 'scrooloose/nerdtree' " file drawer, open with :NERDTreeToggle
+Plugin 'Xuyuanp/nerdtree-git-plugin' " Git status in nerdtree
+Plugin 'scrooloose/nerdcommenter' " Comment lines
+Plugin 'tpope/vim-fugitive' " the ultimate git helper
+Plugin 'sjl/badwolf' " Colorscheme
+Plugin 'airblade/vim-gitgutter' " Git changes
+
+call vundle#end()
+
+
 let mapleader=","
 
 " Syntax Highlighting
@@ -154,20 +170,9 @@ nnoremap <leader>8 :set shiftwidth=8<CR>
 nnoremap <leader>9 :set shiftwidth=9<CR>
 
 
-call vundle#rc("$DOTFILES/vim/bundle")
-call vundle#begin()
 
-" Plugins
-Plugin 'VundleVim/Vundle.vim'
-Plugin 'ctrlpvim/ctrlp.vim' " fuzzy find files
-Plugin 'scrooloose/nerdtree' " file drawer, open with :NERDTreeToggle
-Plugin 'Xuyuanp/nerdtree-git-plugin' " Git status in nerdtree
-Plugin 'scrooloose/nerdcommenter' " Comment lines
-Plugin 'tpope/vim-fugitive' " the ultimate git helper
-Plugin 'sjl/badwolf' " Colorscheme
-Plugin 'airblade/vim-gitgutter' " Git changes
+exe 'source' "$DOTFILES/config/vim.vim"
+" source "$HOME/.config/dotconfig/vimrc.vim"
 
-source "$DOTFILES/config/vimrc.vim"
-source "$HOME/.config/dotconfig/vimrc.vim"
-
-call vundle#end()
+filetype off
+filetype plugin indent on
