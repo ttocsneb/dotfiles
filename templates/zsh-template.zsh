@@ -5,8 +5,13 @@
 # to know which specific one was loaded, run: echo $RANDOM_THEME
 # See https://github.com/robbyrussell/oh-my-zsh/wiki/Themes
 # ZSH_THEME="robbyrussell"
-ZSH_THEME="powerlevel9k/powerlevel9k"
+# block nerd
+# ZSH_THEME="powerlevel9k/powerlevel9k"
+# else nerd
+ZSH_THEME="ttocsneb"
+# end nerd
 
+# Powerlevel9k setings (Only applies when using plowerlevel9k theme)
 POWERLEVEL9K_PROMPT_ON_NEWLINE=true
 #POWERLEVEL9K_DISABLE_RPROMPT=true
 POWERLEVEL9K_MODE='nerdfont-complete'
@@ -76,13 +81,19 @@ plugins=(git)
 # You may need to manually set your language environment
 # export LANG=en_US.UTF-8
 
-# Preferred editor for local and remote sessions
-if [[ -n $SSH_CONNECTION ]]; then
-  export EDITOR='vim'
-else
-  export EDITOR='nvim'
-fi
+# Preferred editor
+# block neovim
+alias vim='nvim'
+alias vi='nvim'
+export EDITOR='nvim'
+# else neovim
+# export EDITOR='vim'
+# end neovim
 
 # Compilation flags
 # export ARCHFLAGS="-arch x86_64"
 
+# Dotfile Configuration
+
+export CONFIG_DOT_NERD=NO
+CONFIG_DOT_UPDATE=YES

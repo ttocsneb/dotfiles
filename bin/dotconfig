@@ -1,8 +1,9 @@
 #!/bin/bash
 
-version=2
+version=3
 
-#!/bin/bash
+COMMENT="$DOTFILES/bin/commentblock"
+
 function tolow {
   echo $1 | tr '[:upper:]' '[:lower:]'
 }
@@ -22,23 +23,44 @@ function is_no {
 echo Configuring Dotfiles
 echo ====================
 
-read -rp "Do you want to configure local or global config? [L/g]" conf
-lower="$(tolow $conf)"
-config="$HOME/.dotrc"
-if [[ $lower == g* ]]; then
-  config="$DOTFILES/dotrc"
+globalConf="$DOTFILES/config"
+localConf="$HOME/.config/dotfiles"
+config="$globalConf"
+if [ -d "$config" ]; then
+  if [ -w "$config" ]; then
+    read -rp "Global config already exists, would you like to reconfigure it? [y/N]" reconfigure
+    if ! is_yes "$reconfigure"; then
+      config="$localConf"
+    fi
+  else
+    config="$localConf"
+    echo "Configuring config in '$config'"
+  fi
 fi
 
 if [ -e "$config" ]; then
-  echo "Backing up '$config' to $HOME/.original-dotfiles"
-  mkdir -p "$HOME/.original-dotfiles"
-  mv "$config" "$HOME/.original-dotfiles"
+  if ! [ -w "$config" ]; then
+    echo "You do not have permission to modify '$config'!"
+    exit 1
+  fi
+
+  echo "Backing up '$config' to $config/config.old"
+  mkdir -p "$config/config.old"
+  mv "$config" "$config/config.old"
+else
+  if ! [ -w "$(dirname "$config")"]; then
+    echo "You do not have permission to create '$config'"
+    exit 1
+  fi
 fi
 
-cat "$DOTFILES/drc.template" > $config
+echo Copying templates
+cp "$DOTFILES/templates/tmux-template.conf" "$config/tmux.conf"
+cp "$DOTFILES/templates/vim-template.vim" "$config/vim.vim"
+cp "$DOTFILES/templates/zsh-template.zsh" "$config/zsh.zsh"
+echo $version > $config/.version
 
-printf "# vi:syntax=zsh\nCONFIG_DOT_VER=$version\n\n# Dotfiles Config\n" >> $config
-
+# Check if neovim is installed
 if [ -z ${use_vim+x} ]; then
   if ! hash nvim &> /dev/null; then
     use_vim="yes"
@@ -47,45 +69,53 @@ if [ -z ${use_vim+x} ]; then
   fi
 fi
 
-CONFIG_DOT_NEOVIM=YES
 if ! is_no "$use_vim"; then
   echo disabling neovim
   CONFIG_DOT_NEOVIM=NO
+  $DOTFILES/bin/commentblock -disable -name neovim "$config/zsh.zsh"
 fi
-echo "export CONFIG_DOT_NEOVIM=$CONFIG_DOT_NEOVIM" >> $config
 
 read -rp "Do you want automatically to check for dotfile updates? [Y/n] " update
 CONFIG_UPDATE=NO
 if ! is_no "$update"; then
   CONFIG_UPDATE=YES
 fi
-printf "export CONFIG_DOT_UPDATE=$CONFIG_UPDATE\n\n" >> $config
+
+sed -i "s/CONFIG_DOT_UPDATE=.*/CONFIG_DOT_UPDATE=$CONFIG_UPDATE/" "$config/zsh.zsh"
 
 read -rp "Are you using NerdFonts? [y/N] " nerd
 
-CONF_THEME='$DOTFILES/zsh/themes/ttocsneb.zsh'
 CONFIG_NERD='NO'
 if is_yes "$nerd"; then
   CONFIG_NERD='YES'
-
-  read -rp "Would you like to use PowerLevel9k? [Y/n] " pl9k
-  if ! is_no "$pl9k"; then
-    CONF_THEME='$DOTFILES/zsh/themes/pl9k.zsh'
-  fi
+  "$COMMENT" -enable -name nerd "$config/vim.vim"
+  "$COMMENT" -enable -name nerd "$config/tmux.conf"
+  "$COMMENT" -enable -name nerd "$config/zsh.zsh"
 fi
-printf "source \"$CONF_THEME\"\n\nexport CONFIG_DOT_NERD=$CONFIG_NERD\n" >> $config
+sed -i "s/CONFIG_DOT_NERD=.*/CONFIG_DOT_NERD=$CONFIG_NERD/" $config/zsh.zsh
 
 read -rp "Do you want to use COC? [y/N] " useCoc
-COC=NO
 if ! is_no "$useCoc"; then
   COC=YES
+  "$COMMENT" -enable -name coc "$config/vim.vim"
   if ! hash node &> /dev/null; then
     echo Make sure you install node
   fi
 fi
-echo "export CONFIG_DOT_COC=$COC" >> $config
 
-echo --------------------
+read -rp "Should tmux display the battery? (y/N)" battery
+read -rp "Should tmux display the current song? (y/N)" song
 
-# Setup the tmux files
-$DOTFILES/tmux/setup.sh "$config"
+if is_yes "$battery"; then
+  "$COMMENT" -disable -name time "$config/tmux.conf"
+  if is_yes "$song"; then
+    "$COMMENT" -enable -name battery_music "$config/tmux.conf"
+  else
+    "$COMMENT" -enable -name battery "$config/tmux.conf"
+  fi
+else
+  if is_yes "$song"; then
+    "$COMMENT" -disable -name time "$config/tmux.conf"
+    "$COMMENT" -enable -name music "$config/tmux.conf"
+  fi
+fi
