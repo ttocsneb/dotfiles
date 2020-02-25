@@ -1,4 +1,15 @@
 # This dockerfile is intended for testing new installs
-from ubuntu:latest
+from ubuntu:bionic
+RUN apt-get update \
+      && apt-get install -y \
+        neovim \
+        git \
+        tmux \
+        zsh
 
+WORKDIR /usr/src/dotfiles
+
+COPY . .
+
+CMD ["./install.sh", "/usr/src/dotfiles", "--no-vim-install"]
 
