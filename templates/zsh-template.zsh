@@ -1,10 +1,13 @@
 #!/bin/zsh
 
+if [ -n "$DISPLAY" ]; then
+  export TERM=xterm-256color
+fi
+
 # Set name of the theme to load --- if set to "random", it will
 # load a random theme each time oh-my-zsh is loaded, in which case,
 # to know which specific one was loaded, run: echo $RANDOM_THEME
 # See https://github.com/robbyrussell/oh-my-zsh/wiki/Themes
-# ZSH_THEME="robbyrussell"
 # block nerd
 # ZSH_THEME="powerlevel9k/powerlevel9k"
 # else nerd

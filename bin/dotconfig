@@ -4,21 +4,7 @@ version=3
 
 COMMENT="$DOTFILES/bin/commentblock"
 
-function tolow {
-  echo $1 | tr '[:upper:]' '[:lower:]'
-}
-
-function is_yes {
-  lower="$(tolow $1)"
-  [[ $lower == y* ]]
-  return $?
-}
-
-function is_no {
-  lower="$(tolow $1)"
-  [[ $lower == n* ]]
-  return $?
-}
+source "$DOTFILES/bin/bash_helpers"
 
 echo Configuring Dotfiles
 echo ====================
@@ -34,9 +20,18 @@ if [ -d "$config" ]; then
     fi
   else
     config="$localConf"
-    echo "Configuring config in '$config'"
   fi
 fi
+
+if [[ "$config" == "$localConf" ]] && [ -w "$config" ]; then
+  read -rp "Local config already exists, would you still like to reconfigure it? [y/N]" reconfigure
+  if ! is_yes "$reconfigure"; then
+    echo "Stopping Configuration"
+    exit 0
+  fi
+fi
+
+echo "Configuring dotfiles in '$config'"
 
 if [ -e "$config" ]; then
   if ! [ -w "$config" ]; then
@@ -45,14 +40,17 @@ if [ -e "$config" ]; then
   fi
 
   echo "Backing up '$config' to $config/config.old"
-  mkdir -p "$config/config.old"
-  mv "$config" "$config/config.old"
+  mv "$config" "$config.old/"
+  mkdir -p "$config"
+  mv "$config.old" "$config/config.old/"
 else
-  if ! [ -w "$(dirname "$config")"]; then
+  if ! [ -w "$(dirname "$config")" ]; then
     echo "You do not have permission to create '$config'"
     exit 1
   fi
 fi
+
+mkdir -p "$config"
 
 echo Copying templates
 cp "$DOTFILES/templates/tmux-template.conf" "$config/tmux.conf"
@@ -61,15 +59,13 @@ cp "$DOTFILES/templates/zsh-template.zsh" "$config/zsh.zsh"
 echo $version > $config/.version
 
 # Check if neovim is installed
-if [ -z ${use_vim+x} ]; then
-  if ! hash nvim &> /dev/null; then
-    use_vim="yes"
-  else
-    use_vim="no"
-  fi
+if ! hash nvim &> /dev/null; then
+  use_vim="yes"
+else
+  use_vim="no"
 fi
 
-if ! is_no "$use_vim"; then
+if is_yes "$use_vim"; then
   echo disabling neovim
   CONFIG_DOT_NEOVIM=NO
   $DOTFILES/bin/commentblock -disable -name neovim "$config/zsh.zsh"
@@ -97,7 +93,7 @@ sed -i "s/CONFIG_DOT_NERD=.*/CONFIG_DOT_NERD=$CONFIG_NERD/" $config/zsh.zsh
 read -rp "Do you want to use COC? [y/N] " useCoc
 if ! is_no "$useCoc"; then
   COC=YES
-  "$COMMENT" -enable -name coc "$config/vim.vim"
+  "$COMMENT" -enable -name CoC "$config/vim.vim"
   if ! hash node &> /dev/null; then
     echo Make sure you install node
   fi

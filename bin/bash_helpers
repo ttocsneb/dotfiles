@@ -1,0 +1,18 @@
+#!/bin/bash
+
+function tolow {
+  echo $1 | tr '[:upper:]' '[:lower:]'
+}
+
+function is_yes {
+  lower="$(tolow $1)"
+  [[ $lower == y* ]]
+  return $?
+}
+
+function is_no {
+  lower="$(tolow $1)"
+  [[ $lower == n* ]]
+  return $?
+}
+

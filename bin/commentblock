@@ -45,10 +45,13 @@ regex_default_block = (
 def iter_blocks(name, text, regex):
     for block in re.finditer(regex, text):
         try:
-            if next(re.finditer(name, block.group(0))):
-                yield block
-        except:
+            next(re.finditer(name, block.group(2)))
+            contains = True
+        except StopIteration:
+            contains = False
             pass
+        if contains:
+            yield block
 
 
 def processCommand(filePath, block, cmd):
@@ -77,6 +80,40 @@ def uncomment(comment, block, regex_conf):
     return '\n'.join(out)
 
 
+def processComments(action, block, re_opt):
+    cb = block.span(3)
+    cbElse = block.span(4)
+
+    blockA = (block.group(3),) + cb
+    blockB = (block.group(4),) + cbElse
+    if action is "disable":
+        blockA, blockB = blockB, blockA
+
+    newtextA = ""
+    newtextB = ""
+
+    if blockA[1] is not -1:
+        newtextA = uncomment(
+            block.group(1), blockA[0], re_opt
+        )
+    if blockB[1] is not -1:
+        newtextB = comment(
+            block.group(1), blockB[0]
+        )
+
+    if action is "disable":
+        blockA, blockB = blockB, blockA
+        newtextA, newtextB = newtextB, newtextA
+
+    beg = block.string[0:blockA[1]]
+    if blockB[1] is not -1:
+        mid = block.string[blockA[2]:blockB[1]]
+        end = block.string[blockB[2]:]
+        return beg + newtextA + mid + newtextB + end
+    end = block.string[blockA[2]:]
+    return beg + newtextA + end
+
+
 def str_sub(orig, new, start, end):
     return orig[0:start] + new + orig[end:]
 
@@ -99,34 +136,11 @@ def process(filePath, name, block, cmd=None, action=None, dryRun=False,
                 print("Found block '%s' on line %s" % (
                     block.group(2), line_no(text, block.start())
                 ))
-            cb = block.span(3)
-            cbElse = block.span(4)
 
             if cmd is not None:
                 processCommand(filePath, block, cmd)
             elif action in ["enable", "disable"]:
-                blockA = (block.group(3),) + cb
-                blockB = (block.group(4),) + cbElse
-                if action is "disable":
-                    blockA, blockB = blockB, blockA
-
-                if blockA[1] is not -1:
-                    newtextA = uncomment(
-                        block.group(1), blockA[0], re_opt
-                    )
-                if blockB[1] is not -1:
-                    newtextB = comment(
-                        block.group(1), blockB[0]
-                    )
-
-                if action is "disable":
-                    blockA, blockB = blockB, blockA
-                    newtextA, newtextB = newtextB, newtextA
-
-                beg = text[0:blockA[1]]
-                mid = text[blockA[2]:blockB[1]]
-                end = text[blockB[2]:]
-                newtext = beg + newtextA + mid + newtextB + end
+                newtext = processComments(action, block, re_opt)
                 break
             elif action is "print":
                 print("Main:")
@@ -245,6 +259,8 @@ if __name__ == "__main__":
     args.block = re.compile(args.block, args.re_opt)
 
     if args.verbose:
+        print("Arguments: ")
+        print("  " + str(args))
         print("Using Block Regex:")
         print("  " + args.block.pattern)
 

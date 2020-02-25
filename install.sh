@@ -6,7 +6,7 @@
 #
 ###################################################
 
-! getopt --test > /dev/null 
+! getopt --test > /dev/null
 if [[ ${PIPESTATUS[0]} -ne 4 ]]; then
 	echo 'getopt is outdated or not installed!'
 	exit 1
@@ -123,52 +123,27 @@ function link {
   say $BAR
   ln -sv $DOTFILES/zsh/zshrc.lnk $HOME/.zshrc
   ln -sv $DOTFILES/tmux/tmux.conf.lnk $HOME/.tmux.conf
-  ln -sv $DOTFILES/vim/vimrc $HOME/.vimrc 
+  ln -sv $DOTFILES/vim/vimrc $HOME/.vimrc
   mkdir -pv $nvim_conf
   ln -sv $DOTFILES/vim/init.vim.lnk $nvim_conf/init.vim
   say $LIN
 }
 
-function migrate_i {
-  CURVER=2
-
-  dotConfig="$1"
-
-  if ! version=$(< $dotConfig grep -Po '(?<=CONFIG_DOT_VER=)\d+'); then
-    version=0
-    return 0
-  fi
-
-  if [ -z $version ]; then
-    $DOTFILES/bin/dotconfig
-  elif [ $version -eq 0 ]; then
-    echo Could not detect version :/  Reconfiguring
-    $DOTFILES/bin/dotconfig
-  elif [ $version -lt $CURVER ]; then
-    echo Updating old configurations:
-    while [ $version -lt $CURVER ]; do
-      case "$version" in
-        1)
-          printf "\tAppending New Template"
-          old_rc=$(cat $dotConfig)
-          cat "$DOTFILES/drc.template" > $dotConfig
-          echo "$old_rc" >> $dotConfig
-          ;;
-      esac
-      ((version++))
-    done
-    sed -i "s/CONFIG_DOT_VER=.*/CONFIG_DOT_VER=$CURVER/g" $dotConfig
-  fi
-}
-
 function migrate {
   migrated=NO
-  if [ -e "$HOME/.dotrc" ]; then
-    migrate_i "$HOME/.dotrc"
+  MIGRATE="$DOTFILES/bin/dotmigrate"
+  if [ -e "$HOME/.config/dotfiles" ]; then
+    "$MIGRATE" "$HOME/.config/dotfiles"
+    migrated=YES
+  elif [ -e "$HOME/.dotrc" ]; then
+    "$MIGRATE" "$HOME/.dotrc" "$HOME/.config/dotfiles"
     migrated=YES
   fi
-  if [ -e "$DOTFILES/dotrc" ]; then
-    migrate_i "$DOTFILES/dotrc"
+  if [ -e "$DOTFILES/config" ]; then
+    "$MIGRATE" "$DOTFILES/config"
+    migrated=YES
+  elif [ -e "$DOTFILES/dotrc" ]; then
+    "$MIGRATE" "$DOTFILES/dotrc" "$DOTFILES/config"
     migrated=YES
   fi
   if [ $migrated == "NO" ]; then
@@ -186,6 +161,21 @@ function update {
     if ! [ -w "$DOTFILES/.git" ]; then
       say "You do not have permission to update dotfiles"
       return 2
+    fi
+
+    # Check if neovim is installed
+    if ! hash nvim &> /dev/null; then
+      vim="vim"
+    else
+      vim="nvim"
+    fi
+
+    branch="$(git branch | grep -Po '(?<=\* ).*')"
+    if ! git branch --all | grep -q "remotes/.*/$branch"; then
+      # there is no remote to update,
+      migrate
+      "$vim" +PluginInstall +qall
+      return 1
     fi
     cd $DOTFILES
     # Check for updates
@@ -208,13 +198,12 @@ function update {
           echo Restoring local changes
           git stash pop
         fi
-        migrate
         say $LIN
         echo Successfully updated dotfiles
       fi
-    else
-      migrate
     fi
+    migrate
+    "$vim" +PluginInstall +qall
     return 1
   elif [ -d $DOTFILES ]; then
     echo "'$DOTFILES' already exists!"
@@ -349,13 +338,18 @@ link
 
 ##################################################
 #
+# Migrate/Configure the settings
+#
+##################################################
+migrate
+
+##################################################
+#
 # Install Vim Plugins
 #
 ##################################################
 echo Installing vim plugins
 $vim +PluginInstall +qall
-
-migrate
 
 echo Done!
 
