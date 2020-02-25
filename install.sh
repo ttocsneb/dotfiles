@@ -173,7 +173,6 @@ function migrate {
     "$MIGRATE" "$DOTFILES/dotrc" "$DOTFILES/config"
     migrated=YES
   fi
-  echo $migrated
   if is_no $migrated; then
     say "Creating new Config"
     $DOTFILES/bin/dotconfig
