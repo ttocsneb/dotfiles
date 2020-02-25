@@ -1,8 +1,10 @@
 #!/bin/zsh
 
-echo You are currently using a highly experimental version of dotfiles, use at your own risk!
-
 export DOTFILES="$(dirname "$(dirname "$(readlink "$HOME/.zshrc")")")"
+
+if ! [[ "master devel" =~ "$(git --git-dir "$DOTFILES/.git" branch | grep -Po '(?<=\* ).*')" ]]; then
+  echo You are currently using a highly experimental version of dotfiles, use at your own risk!
+fi
 
 # Any configurations that you want to add should be placed in your dotrc file
 # Either in $DOTFILES/dotrc or in $HOME/.dotrc
