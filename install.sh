@@ -136,7 +136,7 @@ function backup {
   if [ -e "$nvim_conf" ]; then
     find $nvim_conf -maxdepth 1 \
       -name init.vim \
-      -exec mv -v {} $BACKUP_DOTFILES
+      -exec mv -v {} $BACKUP_DOTFILES \;
   fi
   say $LIN
 }
