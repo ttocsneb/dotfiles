@@ -1,19 +1,45 @@
+#!/bin/zsh
+
 export DOTFILES="$(dirname "$(dirname "$(readlink "$HOME/.zshrc")")")"
+
+if ! [[ "master devel" =~ "$(git --git-dir "$DOTFILES/.git" branch | grep -Po '(?<=\* ).*')" ]]; then
+  echo You are currently using a highly experimental version of dotfiles, use at your own risk!
+fi
 
 # Any configurations that you want to add should be placed in your dotrc file
 # Either in $DOTFILES/dotrc or in $HOME/.dotrc
-# Note: $DOTFILES/dotrc will always be loaded, but $HOME/.dotrc will override it
+# Note: $DOTFILES/config will always be loaded, but $HOME/.config/dotfiles will override it
 
 # Load the settings
-if ! [[ -e "$HOME/.dotrc" || -e "$DOTFILES/dotrc" ]]; then
-        echo "No configuration found"
-        "$DOTFILES/configure.sh"
+globalRC="$DOTFILES/config"
+localRC="$HOME/.config/dotfiles"
+oldRCs=("$HOME/.dotrc" "$DOTFILES/dotrc")
+
+RCs=($localRC $globalRC ${oldRCs[@]})
+any=NO
+for rc in $RCs; do
+  if [[ -e "$rc" ]]; then
+    any=YES
+    if [[ -f "$rc" ]]; then
+      if [[ "$rc" == "${oldRCs[0]}" ]]; then
+        newRc="$localRC"
+      else
+        newRc="$globalRC"
+      fi
+      echo "Migrating $rc to $newRc"
+      $DOTFILES/bin/dotmigrate "$rc" "$newRc"
+    fi
+  fi
+done
+
+if [[ $any == "NO" ]]; then
+  echo "No configuration found"
+  $DOTFILES/bin/dotconfig
 fi
-if [ -e "$DOTFILES/dotrc" ]; then
-        source "$DOTFILES/dotrc"
-fi
-if [ -e "$HOME/.dotrc" ]; then
-        source "$HOME/.dotrc"
+if [ -e "$localRC" ]; then
+  source "$localRC/zsh.zsh"
+else
+  source "$globalRC/zsh.zsh"
 fi
 
 # If you come from bash you might have to change your $PATH.
@@ -32,17 +58,17 @@ source $ZSH/oh-my-zsh.sh
 source $DOTFILES/zsh/aliases.sh
 
 if [ -f $HOME/.bash_aliases ]; then
-        source $HOME/.bash_aliases
+  source $HOME/.bash_aliases
 fi
 
 get_date() {
-        date --utc --date="$1" +"%Y-%m-%d %H:%M:%S"
+  date --utc --date="$1" +"%Y-%m-%d %H:%M:%S"
 }
 
 # Keep Dotfiles up to date
 LAST_DOT_UPDATE=$(cat $DOTFILES/.lastupdate 2> /dev/null)
 if [[ $CONFIG_DOT_UPDATE == "YES" && "$(get_date '-10 days')" > "$LAST_DOT_UPDATE" ]]; then
-        # echo "Checking for dotfiles update.."
-        echo "$(get_date)" > $DOTFILES/.lastupdate
-        $DOTFILES/update.sh
+  # echo "Checking for dotfiles update.."
+  echo "$(get_date)" > $DOTFILES/.lastupdate
+  $DOTFILES/update.sh
 fi

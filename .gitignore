@@ -1,6 +1,7 @@
 vim/bundle
 zsh/oh-my-zsh
 dotrc*
+config
 .lastupdate
 .vim
 __pycache__

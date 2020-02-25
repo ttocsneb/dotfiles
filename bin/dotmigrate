@@ -1,0 +1,110 @@
+#!/bin/bash
+
+CURVER=3
+
+dotConfig="$1"
+dotDest="${2:-$dotConfig}"
+
+COMMENT="$DOTFILES/bin/commentblock"
+
+function get_setting {
+  grep -Po "(?<=$2=).*" "$1"
+}
+
+source "$DOTFILES/bin/bash_helpers"
+
+if [ -f "$dotConfig" ]; then
+  if ! version=$(get_setting "$dotConfig" CONFIG_DOT_VER); then
+    version=0
+  fi
+elif [ -d "$dotConfig" ]; then
+  if ! version=$(cat "$dotConfig/.version"); then
+    version=0
+  fi
+fi
+
+if [ -z $version ] || [ $version -eq 0 ]; then
+  echo Could not detect version :/  Reconfiguring
+  $DOTFILES/bin/dotconfig
+elif [ $version -lt $CURVER ]; then
+  if ! [ -w "$dotConfig" ]; then
+    echo "'$dotConfig' is using an old config version and you don't have permission to update it!"
+    exit 1
+  fi
+
+  echo Updating old configurations:
+  while [ $version -lt $CURVER ]; do
+    case "$version" in
+      1)
+        printf "\tAppending Template\n"
+        old_rc=$(cat $dotConfig)
+        cat "$DOTFILES/config/zsh-template.zsh" > $dotConfig
+        echo "$old_rc" >> $dotConfig
+        sed -i 's/CONFIG_DOT_VER=.*/CONFIG_DOT_VER=2' $dotConfig
+        ;;
+      2)
+        printf "\tConverting to Folder\n"
+        mkdir -p "$dotDest"
+        oldConf="$dotDest/dotrc.old"
+        mv "$dotConfig" "$oldConf"
+        printf "\tWarning! any custom changes made will be discarded to '$oldConf'\n"
+        templates="$DOTFILES/templates"
+        zshConf="$dotDest/zsh.zsh"
+        vimConf="$dotDest/vim.vim"
+        tmuxConf="$dotDest/tmux.conf"
+        # Copy template files
+        printf '\tCopying templates\n'
+        cp "$templates/zsh-template.zsh" "$zshConf"
+        cp "$templates/vim-template.vim" "$vimConf"
+        cp "$templates/tmux-template.conf" "$tmuxConf"
+
+        # NEOVIM
+        if is_no "$(get_setting "$oldConf" CONFIG_DOT_NEOVIM)"; then
+          printf '\tDisabling NeoVim\n'
+          "$COMMENT" -disable -name neovim "$zshConf"
+        fi
+
+        # Update
+        update_dot="$(get_setting "$oldConf" CONFIG_DOT_UPDATE)"
+        sed -i "s/CONFIG_DOT_UPDATE=.*/CONFIG_DOT_UPDATE=$update_dot/" "$zshConf"
+
+        # Nerdfonts
+        if is_yes "$(get_setting "$oldConf" CONFIG_DOT_NERD)"; then
+          printf '\tEnabling Nerdfonts\n'
+          "$COMMENT" -enable -name nerd "$zshConf"
+          "$COMMENT" -enable -name nerd "$vimConf"
+          "$COMMENT" -enable -name nerd "$tmuxConf"
+          sed -i 's/CONFIG_DOT_NERD=.*/CONFIG_DOT_NERD=YES/' "$zshConf"
+        fi
+
+        # CoC
+        if is_yes "$(get_setting "$oldConf" CONFIG_DOT_COC)"; then
+          printf '\tEnabling CoC\n'
+          "$COMMENT" -enable -name CoC "$vimConf"
+        fi
+
+        # Battery and Music
+        battery="$(get_setting "$oldConf" CONFIG_DOT_BATTERY)"
+        song="$(get_setting "$oldConf" CONFIG_DOT_MUSIC)"
+        if is_yes "$battery"; then
+          "$COMMENT" -disable -name time "$tmuxConf"
+          if is_yes "$song"; then
+            printf '\tEnabling Tmux Music and Battery\n'
+            "$COMMENT" -enable -name battery_music "$tmuxConf"
+          else
+            printf '\tEnabling Tmux Battery\n'
+            "$COMMENT" -enable -name battery "$tmuxConf"
+          fi
+        else
+          if is_yes "$song"; then
+            printf '\tEnabling Tmux Music\n'
+            "$COMMENT" -disable -name time "$tmuxConf"
+            "$COMMENT" -enable -name music "$tmuxConf"
+          fi
+        fi
+        echo 3 > "$dotDest/.version"
+        ;;
+    esac
+    ((version++))
+  done
+fi

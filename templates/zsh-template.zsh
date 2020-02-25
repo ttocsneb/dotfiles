@@ -1,6 +1,29 @@
-# vi:syntax=zsh
+#!/bin/zsh
 
-# Uncomment the following line to use case-sensitive completion.
+if [ -n "$DISPLAY" ]; then
+  export TERM=xterm-256color
+fi
+
+# Set name of the theme to load --- if set to "random", it will
+# load a random theme each time oh-my-zsh is loaded, in which case,
+# to know which specific one was loaded, run: echo $RANDOM_THEME
+# See https://github.com/robbyrussell/oh-my-zsh/wiki/Themes
+# block nerd
+# ZSH_THEME="powerlevel9k/powerlevel9k"
+# else nerd
+ZSH_THEME="ttocsneb"
+# end nerd
+
+# Powerlevel9k setings (Only applies when using plowerlevel9k theme)
+POWERLEVEL9K_PROMPT_ON_NEWLINE=true
+#POWERLEVEL9K_DISABLE_RPROMPT=true
+POWERLEVEL9K_MODE='nerdfont-complete'
+POWERLEVEL9K_MULTILINE_FIRST_PROMPT_PREFIX="┌"
+POWERLEVEL9K_MULTILINE_LAST_PROMPT_PREFIX="└>"
+
+POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=( virtualenv status time)
+
+## Uncomment the following line to use case-sensitive completion.
 # CASE_SENSITIVE="true"
 
 # Uncomment the following line to use hyphen-insensitive completion.
@@ -61,12 +84,19 @@ plugins=(git)
 # You may need to manually set your language environment
 # export LANG=en_US.UTF-8
 
-# Preferred editor for local and remote sessions
-if [[ -n $SSH_CONNECTION ]]; then
-  export EDITOR='vim'
-else
-  export EDITOR='mvim'
-fi
+# Preferred editor
+# block neovim
+alias vim='nvim'
+alias vi='nvim'
+export EDITOR='nvim'
+# else neovim
+# export EDITOR='vim'
+# end neovim
 
 # Compilation flags
 # export ARCHFLAGS="-arch x86_64"
+
+# Dotfile Configuration
+
+export CONFIG_DOT_NERD=NO
+CONFIG_DOT_UPDATE=YES
