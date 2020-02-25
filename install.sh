@@ -6,14 +6,14 @@
 #
 ###################################################
 
-! getopt --test > /dev/null 
+! getopt --test > /dev/null
 if [[ ${PIPESTATUS[0]} -ne 4 ]]; then
 	echo 'getopt is outdated or not installed!'
 	exit 1
 fi
 
 OPTIONS=hb:s
-LONGOPT=branch:,help,ssh,silent
+LONGOPT=branch:,help,ssh,silent,no-vim-install
 
 ! PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPT --name "$0" -- "$@")
 if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
@@ -28,6 +28,7 @@ export DOTFILES=${DOTFILES:-$HOME/.dotfiles}
 DOTBRANCH=${DOTBRANCH:-master}
 REMOTE="https://github.com/ttocsneb/dotfiles.git"
 SILENT=NO
+VIM=YES
 while true; do
   case "$1" in
     -h|--help)
@@ -40,6 +41,7 @@ Arguments:
                                     Can also set \$DOTBRANCH
   -s            --ssh             Use ssh to pull instead of https
                 --silent          Do not print unnecessary text
+                --no-vim-install  Do not install vim plugins
 Positional Arguments:
   DIRECTORY                       Directory to install to (\$HOME/.dotfiles)
 EOF
@@ -55,6 +57,10 @@ EOF
       ;;
     --silent)
       SILENT=YES
+      shift
+      ;;
+    --no-vim-install)
+      VIM=NO
       shift
       ;;
     --)
@@ -103,18 +109,35 @@ function is_no {
   return $?
 }
 
+function vim_install {
+  if is_yes $VIM; then
+    echo Installing vim plugins
+    vim='nvim'
+    args=''
+    if ! hash nvim &> /dev/null; then
+      vim='vim'
+      args='--headless'
+    fi
+    $vim $args +PluginInstall +qall
+  fi
+}
+
 function backup {
   BACKUP_DOTFILES=${BACKUP_DOTFILES:-$HOME/.original-dotfiles}
   echo Backing up old dotfiles into $BACKUP_DOTFILES
   say $BAR
-  nvim_conf=${XDG_CONFIG_HOME:-$HOME/.config}/nvim
+  nvim_conf="$HOME/.config/nvim"
   mkdir -p $BACKUP_DOTFILES
-  find ~ $nvim_conf -maxdepth 1 \
+  find ~ -maxdepth 1 \
     -name .zshrc \
     -or -name .vimrc \
     -or -name .tmux.conf \
-    -or -name init.vim \
     -print0 | xargs -0r mv -v -t $BACKUP_DOTFILES
+  if [ -e "$nvim_conf" ]; then
+    find $nvim_conf -maxdepth 1 \
+      -name init.vim \
+      -exec mv -v {} $BACKUP_DOTFILES \;
+  fi
   say $LIN
 }
 
@@ -123,56 +146,37 @@ function link {
   say $BAR
   ln -sv $DOTFILES/zsh/zshrc.lnk $HOME/.zshrc
   ln -sv $DOTFILES/tmux/tmux.conf.lnk $HOME/.tmux.conf
-  ln -sv $DOTFILES/vim/vimrc $HOME/.vimrc 
+  ln -sv $DOTFILES/vim/vimrc $HOME/.vimrc
   mkdir -pv $nvim_conf
   ln -sv $DOTFILES/vim/init.vim.lnk $nvim_conf/init.vim
   say $LIN
 }
 
-function migrate_i {
-  CURVER=2
-
-  dotConfig="$1"
-
-  if ! version=$(< $dotConfig grep -Po '(?<=CONFIG_DOT_VER=)\d+'); then
-    version=0
-    return 0
-  fi
-
-  if [ -z $version ]; then
-    $DOTFILES/configure.sh
-  elif [ $version -eq 0 ]; then
-    echo Could not detect version :/  Reconfiguring
-    $DOTFILES/configure.sh
-  elif [ $version -lt $CURVER ]; then
-    echo Updating old configurations:
-    while [ $version -lt $CURVER ]; do
-      case "$version" in
-        1)
-          printf "\tAppending New Template"
-          old_rc=$(cat $dotConfig)
-          cat "$DOTFILES/drc.template" > $dotConfig
-          echo "$old_rc" >> $dotConfig
-          ;;
-      esac
-      ((version++))
-    done
-    sed -i "s/CONFIG_DOT_VER=.*/CONFIG_DOT_VER=$CURVER/g" $dotConfig
-  fi
-}
-
 function migrate {
   migrated=NO
-  if [ -e "$HOME/.dotrc" ]; then
-    migrate_i "$HOME/.dotrc"
+  MIGRATE="$DOTFILES/bin/dotmigrate"
+  if [ -e "$HOME/.config/dotfiles" ]; then
+    say "Migrating '$HOME/.config/dotfiles'"
+    "$MIGRATE" "$HOME/.config/dotfiles"
+    migrated=YES
+  elif [ -e "$HOME/.dotrc" ]; then
+    say "Migrating '$HOME/.dotrc' -> '$HOME/.config/dotfiles'"
+    "$MIGRATE" "$HOME/.dotrc" "$HOME/.config/dotfiles"
     migrated=YES
   fi
-  if [ -e "$DOTFILES/dotrc" ]; then
-    migrate_i "$DOTFILES/dotrc"
+  if [ -e "$DOTFILES/config" ]; then
+    say "Migrating '$DOTFILES/config'"
+    "$MIGRATE" "$DOTFILES/config"
+    migrated=YES
+  elif [ -e "$DOTFILES/dotrc" ]; then
+    say "Migrating '$DOTFILES/dotrc' -> '$DOTFILES/config'"
+    "$MIGRATE" "$DOTFILES/dotrc" "$DOTFILES/config"
     migrated=YES
   fi
-  if [ $migrated == "NO" ]; then
-    $DOTFILES/configure.sh
+  echo $migrated
+  if is_no $migrated; then
+    say "Creating new Config"
+    $DOTFILES/bin/dotconfig
   fi
 }
 
@@ -186,6 +190,21 @@ function update {
     if ! [ -w "$DOTFILES/.git" ]; then
       say "You do not have permission to update dotfiles"
       return 2
+    fi
+
+    # Check if neovim is installed
+    if ! hash nvim &> /dev/null; then
+      vim="vim"
+    else
+      vim="nvim"
+    fi
+
+    branch="$(git branch | grep -Po '(?<=\* ).*')"
+    if ! git branch --all | grep -q "remotes/.*/$branch"; then
+      # there is no remote to update,
+      migrate
+      vim_install
+      return 1
     fi
     cd $DOTFILES
     # Check for updates
@@ -208,13 +227,12 @@ function update {
           echo Restoring local changes
           git stash pop
         fi
-        migrate
         say $LIN
         echo Successfully updated dotfiles
       fi
-    else
-      migrate
     fi
+    migrate
+    vim_install
     return 1
   elif [ -d $DOTFILES ]; then
     echo "'$DOTFILES' already exists!"
@@ -291,8 +309,6 @@ for package in ${packages[@]}; do
   fi
 done
 
-use_vim="no"
-vim="nvim"
 if [[ "${to_install[*]}" =~ "nvim" ]]; then
   # Remove nvim from the install list
   to_install=(${to_install[@]/nvim/})
@@ -300,8 +316,6 @@ if [[ "${to_install[*]}" =~ "nvim" ]]; then
   if is_no "$use_vim"; then
     # We want to use nvim, so add neovim (the package name) back to to_install
     to_install+=("neovim")
-  else
-    vim="vim"
   fi
 fi
 
@@ -349,13 +363,17 @@ link
 
 ##################################################
 #
+# Migrate/Configure the settings
+#
+##################################################
+migrate
+
+##################################################
+#
 # Install Vim Plugins
 #
 ##################################################
-echo Installing vim plugins
-$vim +PluginInstall +qall
-
-migrate
+vim_install
 
 echo Done!
 

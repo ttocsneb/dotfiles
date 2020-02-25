@@ -1,0 +1,267 @@
+#!/usr/bin/env python
+import sys
+import argparse
+import re
+import subprocess
+
+"""
+This regex looks for a block defined by a comments (the comments can be
+anything no words or spaces):
+
+Block with else
+    # BLOCK_NAME optional text
+    GROUP 2
+    # else BLOCK_NAME
+    GROUP 3
+    # end BLOCK_NAME
+
+The else block is optional:
+    // BLOCK_NAME optional text
+    GROUP 2
+    // end BLOCK_NAME
+"""
+# These are all parts of the regex
+regex_first_comment = r"([^\w\s]+?)\s*"
+regex_comment = r"\1\s*"
+regex_rest_of_comment = r"(?:\n|\W+.*?\n|$)"
+regex_start_block = (
+    r"^" + regex_first_comment + r"block\s+(\w+)" + regex_rest_of_comment)
+regex_block = regex_comment + r"%s\s*\2" + regex_rest_of_comment
+regex_end_comment = regex_block % "end"
+regex_else_comment = regex_block % "else"
+
+# Stitch together the full regex
+regex_default_block = (
+    regex_start_block +
+    r"(.*?)\n"
+    r"(?:" +  # Else-End Block
+    regex_else_comment + r"(.*?)\n" + regex_end_comment +
+    r"|" +  # Or End Block
+    regex_end_comment +
+    r")"
+)
+
+
+def iter_blocks(name, text, regex):
+    for block in re.finditer(regex, text):
+        try:
+            next(re.finditer(name, block.group(2)))
+            contains = True
+        except StopIteration:
+            contains = False
+            pass
+        if contains:
+            yield block
+
+
+def processCommand(filePath, block, cmd):
+    command = subprocess.Popen(
+        [arg.format(
+            filePath,
+            *[block.group(i) for i in range(1, 5)],
+            match=block.group(0),
+            spans=[block.span(i) for i in range(5)]
+         ) for arg in cmd])
+
+
+def comment(comment, block):
+    out = list()
+    for l in block.split('\n'):
+        out.append('%s %s' % (comment, l))
+    return '\n'.join(out)
+
+
+def uncomment(comment, block, regex_conf):
+    comment_reg = r"^%s\s*" % comment
+    comment = re.compile(comment_reg, regex_conf)
+    out = list()
+    for l in block.split('\n'):
+        out.append(re.sub(comment, '', l))
+    return '\n'.join(out)
+
+
+def processComments(action, block, re_opt):
+    cb = block.span(3)
+    cbElse = block.span(4)
+
+    blockA = (block.group(3),) + cb
+    blockB = (block.group(4),) + cbElse
+    if action is "disable":
+        blockA, blockB = blockB, blockA
+
+    newtextA = ""
+    newtextB = ""
+
+    if blockA[1] is not -1:
+        newtextA = uncomment(
+            block.group(1), blockA[0], re_opt
+        )
+    if blockB[1] is not -1:
+        newtextB = comment(
+            block.group(1), blockB[0]
+        )
+
+    if action is "disable":
+        blockA, blockB = blockB, blockA
+        newtextA, newtextB = newtextB, newtextA
+
+    beg = block.string[0:blockA[1]]
+    if blockB[1] is not -1:
+        mid = block.string[blockA[2]:blockB[1]]
+        end = block.string[blockB[2]:]
+        return beg + newtextA + mid + newtextB + end
+    end = block.string[blockA[2]:]
+    return beg + newtextA + end
+
+
+def str_sub(orig, new, start, end):
+    return orig[0:start] + new + orig[end:]
+
+
+def line_no(text, index):
+    return len(text[0:index].split('\n'))
+
+
+def process(filePath, name, block, cmd=None, action=None, dryRun=False,
+            re_opt=0, verbose=False, **kwargs):
+    if action is "print":
+        verbose = True
+    modifying = ['enable', 'disable']
+    with open(filePath) as f:
+        text = ''.join(f.readlines())
+        newtext = str(text)
+        for block in iter_blocks(name, text, block):
+            if verbose:
+                print("=" * 40)
+                print("Found block '%s' on line %s" % (
+                    block.group(2), line_no(text, block.start())
+                ))
+
+            if cmd is not None:
+                processCommand(filePath, block, cmd)
+            elif action in ["enable", "disable"]:
+                newtext = processComments(action, block, re_opt)
+                break
+            elif action is "print":
+                print("Main:")
+                print("-" * 40)
+                print(block.group(3))
+                print("-" * 40)
+                if block.start(4) is not -1:
+                    print("Else:")
+                    print("-" * 40)
+                    print(block.group(4))
+                    print("-" * 40)
+
+    if action in modifying:
+        if dryRun or verbose:
+            if verbose:
+                print("=" * 40)
+            print(newtext)
+        if not dryRun:
+            with open(filePath, "w") as f:
+                f.write(newtext)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        sys.argv[0],
+        description="Perform actions on text blocks",
+        formatter_class=argparse.RawTextHelpFormatter
+    )
+
+    parser.add_argument(
+        "-n", "--dry-run", dest="dryRun", action="store_true", default=False,
+        help="Don't make any changes. Print the changes to the terminal"
+    )
+    parser.add_argument(
+        "-v", "--verbose", dest="verbose", action="store_true", default=False,
+        help="Print Verbose output"
+    )
+
+    action = parser.add_mutually_exclusive_group()
+    action.add_argument(
+        "-exec", dest="cmd", metavar="CMD", nargs='+',
+        help=(
+            "run a shell command\n"
+            "  The command will formatted using a python formatter string:\n"
+            "   {0}:     filePath\n"
+            "   {1}:     group 1 (comment)\n"
+            "   {2}:     group 2 (name)\n"
+            "   {3}:     group 3 (block 1)\n"
+            "   {4}:     group 4 (block 2)\n"
+            "   {match}: the full match\n"
+            "   {spans}: list of start and end indices"
+        )
+    )
+    action.add_argument(
+        "-enable", dest="action", action="store_const", const="enable",
+        help=(
+            "Uncomment the block, if there is an else block, then Comment it\n"
+            "  Note: only the first found block will be affected")
+    )
+    action.add_argument(
+        "-disable", dest="action", action="store_const", const="disable",
+        help=(
+            "Comment the block, if there is an else block, then Uncomment it\n"
+            "  Note: only the first found block will be affected")
+    )
+    action.add_argument(
+        "-print", dest="action", action="store_const", const="print",
+        help="Print the found blocks"
+    )
+
+    filters = parser.add_argument_group(
+        "Filters", "Filter the groups modified"
+    )
+    filters.add_argument(
+        "-name", dest="name", default=".",
+        help="Name of the block, Note: this is a regex"
+    )
+
+    case = parser.add_argument_group("regex", 'Options for the regex parser')
+    case.add_argument(
+        "--block", dest="block", metavar="REGEX",
+        default=regex_default_block,
+        help=("The regex for finding blocks. the regex must have 3 groups\n"
+              "    (block name, code block 1, code block 2 (optional))\n"
+              "  The default regex works in the following way:\n"
+              "    COMMENT BLOCK_NAME FLAVOR_TEXT(optional)\n"
+              "    CODE BLOCK\n"
+              "    COMMENT else BLOCK_NAME FLAVOR_TEXT(optional)\n"
+              "    CODE BLOCK\n"
+              "    COMMENT end BLOCK_NAME FLAVOR_TEXT(optional)")
+    )
+    case.add_argument(
+        "-c", "--case-sensitive", dest="case", action="store_true",
+        default=False,
+        help=("regex is by default case-insensitive, adding this option,\n"
+              "  will make it case sensitive")
+    )
+    case.add_argument(
+        "-u", "--unicode", dest="re_opt", action="append_const", const=re.U,
+        help="Use the unicode option for regex"
+    )
+    case.add_argument(
+        "-l", "--locale", dest="re_opt", action="append_const", const=re.L,
+        help="Use the locale option for regex")
+    case.set_defaults(re_opt=[re.M, re.S])
+
+    parser.add_argument(
+        "filePath",
+        help="File to edit"
+    )
+
+    args = parser.parse_args()
+    if not args.case:
+        args.re_opt.append(re.I)
+    args.re_opt = sum(args.re_opt)
+    args.block = re.compile(args.block, args.re_opt)
+
+    if args.verbose:
+        print("Arguments: ")
+        print("  " + str(args))
+        print("Using Block Regex:")
+        print("  " + args.block.pattern)
+
+    process(**vars(args))

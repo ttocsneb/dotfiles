@@ -4,10 +4,9 @@ filetype off
 " set the runtime path to include Vundle and initialize
 set rtp+=$DOTFILES/vim/bundle/Vundle.vim
 
-let mapleader=","
-
 call vundle#rc("$DOTFILES/vim/bundle")
 call vundle#begin()
+
 " Plugins
 Plugin 'VundleVim/Vundle.vim'
 Plugin 'ctrlpvim/ctrlp.vim' " fuzzy find files
@@ -18,24 +17,17 @@ Plugin 'tpope/vim-fugitive' " the ultimate git helper
 Plugin 'sjl/badwolf' " Colorscheme
 Plugin 'airblade/vim-gitgutter' " Git changes
 
-if $CONFIG_DOT_COC == 'YES'
-        Plugin 'neoclide/coc.nvim' " Language Completion Protocol
-endif
-
-if $CONFIG_DOT_NERD == 'YES'
-        Plugin 'ryanoasis/vim-devicons' " allow Nerdfont Icons
-        Plugin 'tiagofumo/vim-nerdtree-syntax-highlight' " Pretty Icons
-endif
-
 call vundle#end()
 
-" Syntax Highlighting
 
+let mapleader=","
+
+" Syntax Highlighting
 try
-        " Badwolf won't be installed when vundle is downloading plugins
-        colorscheme badwolf
+  " Badwolf won't be installed when vundle is downloading plugins
+  colorscheme badwolf
 catch /^Vim\%((\a\+)\)\=:E185/
-        " deal with it
+  " deal with it
 endtry
 
 syntax enable
@@ -47,14 +39,14 @@ autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isT
 
 " Sync open file with Nerdtree
 function! IsNERDTreeOpen()
-        return exists("t:NERDTreeBufName") && (bufwinnr(t:NERDTreeBufName) != -1)
+  return exists("t:NERDTreeBufName") && (bufwinnr(t:NERDTreeBufName) != -1)
 endfunction
 
 function! SyncTree()
-        if &modifiable && IsNERDTreeOpen() && strlen(expand('%')) > 0 && !&diff
-                NERDTreeFind
-                wincmd p
-        endif
+  if &modifiable && IsNERDTreeOpen() && strlen(expand('%')) > 0 && !&diff
+    NERDTreeFind
+    wincmd p
+  endif
 endfunction
 
 " Highlight Currently open buffer in NERDTree
@@ -86,7 +78,6 @@ nmap <leader>hu <plug>(GitGutterUndoHunk)
 nmap [c <plug>(GitGutterPrevHunk)
 nmap ]c <plug>(GitGutterNextHunk)
 
-
 nmap <leader>hf :GitGutterFold<CR>
 
 highlight GitGutterAdd    guifg=#009900 ctermfg=2
@@ -95,63 +86,17 @@ highlight GitGutterDelete guifg=#ff2222 ctermfg=1
 
 " Nerdtree Git Plugin
 let g:NERDTreeIndicatorMapCustom = {
-    \ "Modified"  : "~",
-    \ "Staged"    : "+",
-    \ "Untracked" : "*",
-    \ "Renamed"   : "→",
-    \ "Unmerged"  : "=",
-    \ "Deleted"   : "X",
-    \ "Dirty"     : "≈",
-    \ "Clean"     : "√",
-    \ 'Ignored'   : '≡',
-    \ "Unknown"   : "?"
-    \ }
-
-" coc.nvim
-if $CONFIG_DOT_COC == 'YES'
-        " COC config
-        let g:coc_global_extensions = [
-                \ 'coc-snippets',
-                \ 'coc-pairs',
-                \ 'coc-python',
-                \ 'coc-ccls',
-                \ 'coc-json']
-        set hidden
-        set updatetime=300
-
-        set shortmess+=c
-
-        inoremap <silent><expr> <TAB>
-                \ pumvisible() ? "\<C-n" :
-                \ <SID>check_back_space() ? "\<TAB>" :
-                \ coc#refresh()
-        inoremap <expr><S-TAB> pumvisible() ? "\<C-p>" : "\<C-h>"
-
-        function! s:check_back_space() abort
-                let col = col('.') - 1
-                return !col || getline('.')[col - 1] =~# '\s'
-        endfunction
-
-        " Use <c-space> to trigger completion
-        inoremap <silent><expr> <c-space> coc#refresh()
-
-        " Use <cr> to confirm completion, `<C-g>u` means break undu chain at current position.
-        " Coc only does snippet and additional edit on confrim.
-        inoremap <expr> <cr> pumvisible() ? "\<C-y>" : "\<C-g>u\<CR>"
-
-	  set statusline=%h%m%r\ %<%{coc#status()}\ %=%f\ %=%l,%c%V\ \ %P
-endif
-
-" coc-cSpell
-nnoremap sa :CocCommand cSpell.addWordToWorkspaceDictionary<CR>
-nnoremap s<S-a> :CocCommand cSpell.addWordToUserDictionary<CR>
-nnoremap si :CocCommand cSpell.addIgnoreWordToWorkspace<CR>
-nnoremap s<S-i> :CocCommand cSpell.addIgnoreWordToUser<CR>
-nnoremap se :CocCommand cSpell.enableForWorkspace<CR>
-nnoremap s<S-e> :CocCommand cSpell.enableCurrentLanguage<CR>
-nnoremap sd :CocCommand cSpell.disableForWorkspace<CR>
-nnoremap s<S-d> :CocCommand cSpell.disableCurrentLanguage<CR>
-nnoremap st :CocCommand cSpell.toggleEnableSpellChecker<CR>
+  \ "Modified"  : "~",
+  \ "Staged"    : "+",
+  \ "Untracked" : "*",
+  \ "Renamed"   : "→",
+  \ "Unmerged"  : "=",
+  \ "Deleted"   : "X",
+  \ "Dirty"     : "≈",
+  \ "Clean"     : "√",
+  \ 'Ignored'   : '≡',
+  \ "Unknown"   : "?"
+  \ }
 
 " ctrlp
 let g:ctrlp_user_command = ['.git/', 'git --git-dir=%s/.git ls-files -oc --exclude-standard']
@@ -162,8 +107,9 @@ set modeline
 " Tab Settings
 set smarttab
 set cindent
-set tabstop=6
-set softtabstop=4
+set tabstop=2 " The tab character is this many spaces
+set softtabstop=2 " When pressing the tab, insert this many spaces (if using tabs, )
+set shiftwidth=0 " Set the shift width to whatever softtabstop is
 set expandtab
 
 " Window Splitting
@@ -212,29 +158,6 @@ nnoremap ^ <nop>
 " highlight last inserted text
 nnoremap gV `[v`]
 
-"Leader Shortcuts
-" inoremap jk <esc>
-" toggle gundo
-" nnoremap <leader>u :GundoToggle<CR>
-" edit vimrc/zshrc and load vimrc bindings
-nnoremap <leader>ev :vsp ~/.vimrc<CR>
-nnoremap <leader>ez :vsp ~/.zshrc<CR>
-" open ag.vim
-" nnoremap <leader>a :Ag
-
-"CtrlP Settings
-"let g:ctrlp_match_window = 'bottom,order:ttb'
-"let g:ctrlp_switch_buffer = 0
-"let g:ctrlp_working_path_mode = 0
-"let g:ctrlp_user_command = 'ag %s -l --nocolor --hidden -g ""'
-
-"Backups
-" set backup
-" set backupdir=~/.vim-tmp,~/.tmp,/var/tmp,/tmp
-" set backupskip=/tmp/*,/private/tmp/*
-" set directory=~/.vim-tmp,~/.tmp,~/tmp,/var/tmp,/tmp
-" set writebackup
-
 " Tab mappings
 nnoremap <leader>1 :set shiftwidth=1<CR>
 nnoremap <leader>2 :set shiftwidth=2<CR>
@@ -246,32 +169,10 @@ nnoremap <leader>7 :set shiftwidth=7<CR>
 nnoremap <leader>8 :set shiftwidth=8<CR>
 nnoremap <leader>9 :set shiftwidth=9<CR>
 
-" AutoGroup
-augroup configgroup
-    autocmd!
-    autocmd VimEnter * highlight clear SignColumn
-    autocmd BufWritePre *.php,*.py,*.js,*.txt,*.hs,*.java,*.md %s/\s\+$//e
-                " \:call <SID>StripTrailingWhitespaces()
-    autocmd FileType java setlocal noexpandtab
-    autocmd FileType java setlocal list
-    autocmd FileType java setlocal listchars=tab:+\ ,eol:-
-    autocmd FileType java setlocal formatprg=par\ -w80\ -T4
-    autocmd FileType php setlocal expandtab
-    autocmd FileType php setlocal list
-    autocmd FileType php setlocal listchars=tab:+\ ,eol:-
-    autocmd FileType php setlocal formatprg=par\ -w80\ -T4
-    autocmd FileType ruby setlocal tabstop=2
-    autocmd FileType ruby setlocal shiftwidth=2
-    autocmd FileType ruby setlocal softtabstop=2
-    autocmd FileType ruby setlocal commentstring=#\ %s
-    autocmd FileType python setlocal commentstring=#\ %s
-    autocmd BufEnter *.cls setlocal filetype=java
-    autocmd BufEnter *.zsh-theme setlocal filetype=zsh
-    autocmd BufEnter Makefile setlocal noexpandtab
-    autocmd FileType sh setlocal tabstop=2
-    autocmd FileType sh setlocal shiftwidth=2
-    autocmd FileType sh setlocal softtabstop=2
-    autocmd FileType yaml setlocal shiftwidth=2
-    autocmd FileType markdown setlocal shiftwidth=2
-    autocmd FileType rmd setlocal shiftwidth=2
-augroup END
+
+
+exe 'source' "$DOTFILES/config/vim.vim"
+" source "$HOME/.config/dotconfig/vimrc.vim"
+
+filetype off
+filetype plugin indent on

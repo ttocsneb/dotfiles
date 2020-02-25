@@ -1,14 +1,17 @@
 #!/bin/bash
-config=$1
+
+function tolow {
+  echo $1 | tr '[:upper:]' '[:lower:]'
+}
 
 function is_yes {
-  lower=$(echo $1 | tr '[:upper:]' '[:lower:]')
+  lower="$(tolow $1)"
   [[ $lower == y* ]]
   return $?
 }
 
 function is_no {
-  lower=$(echo $1 | tr '[:upper:]' '[:lower:]')
+  lower="$(tolow $1)"
   [[ $lower == n* ]]
   return $?
 }

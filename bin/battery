@@ -24,7 +24,7 @@ else
 fi
 
 # Choose symbol based on percentage
-if [[ $CONFIG_DOT_NERD != "YES" ]]; then
+if [[ $mode == "simple" ]]; then
         sym='B'
 elif [ $perc -le 14 ]; then
         sym=${symbol[0]}
